@@ -1,0 +1,36 @@
+name: terralogic
+description: "A new Flutter project for smart agricultural management."
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.11.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  image_picker: ^1.1.2
+  # 🔥 مكتبات الفايربيس الأساسية وقاعدة البيانات
+  firebase_core: ^3.1.0
+  firebase_auth: ^5.1.0
+  cloud_firestore: ^5.0.1
+  google_sign_in: ^7.2.0
+  http: ^1.6.0
+  fl_chart: ^1.2.0
+  tflite_flutter: ^0.12.1  # لتشغيل نموذج الذكاء الاصطناعي
+  image: ^4.1.7          # لمعالجة الصورة وتغيير أبعادها لتناسب النموذج
+  html: ^0.15.4
+  shared_preferences: ^2.2.0 # لحفظ الأسعار محلياً
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/logo.png
+    - assets/model.tflite
+    - assets/labels.json

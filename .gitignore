@@ -1,0 +1,4 @@
+*.hprof
+*.tflite
+build/
+.dart_tool/
