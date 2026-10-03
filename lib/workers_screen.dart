@@ -63,9 +63,11 @@ class _WorkersScreenState extends State<WorkersScreen> {
 
       _nameController.clear();
       _salaryController.clear();
-      if (mounted) Navigator.pop(context); // إغلاق النافذة المنبثقة
+      if (!mounted) return;
+      Navigator.pop(context); // إغلاق النافذة المنبثقة
       
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -107,9 +109,10 @@ class _WorkersScreenState extends State<WorkersScreen> {
                 'name': _nameController.text.trim(),
                 'salary': double.parse(_salaryController.text.trim()),
               });
+              if (!mounted || !context.mounted) return;
               _nameController.clear();
               _salaryController.clear();
-              if (mounted) Navigator.pop(context);
+              Navigator.pop(context);
             },
             child: Text(isArabic ? 'حفظ التغييرات' : 'Save'),
           ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/language_controller.dart';
@@ -23,6 +24,7 @@ class _SplashScreenState extends State<SplashScreen> {
   void _checkAuth() async {
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) {
+      if (Firebase.apps.isEmpty) return;
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
         Navigator.pushReplacement(
@@ -46,7 +48,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Image.asset('assets/images/logo.png', width: 110, height: 110),
+            Image.asset('assets/images/logo.jpg', width: 110, height: 110),
             const SizedBox(height: 20),
             const Text(
               'TerraLogic',
@@ -81,6 +83,7 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController(); // البريد الإلكتروني أو اسم المستخدم
   final _passwordController = TextEditingController();
+  final _farmCodeController = TextEditingController(); // كود المزرعة
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -88,6 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _identifierController.dispose();
     _passwordController.dispose();
+    _farmCodeController.dispose();
     super.dispose();
   }
 
@@ -95,12 +99,13 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _login(bool isArabic) async {
     final identifier = _identifierController.text.trim();
     final password = _passwordController.text.trim();
+    final farmCodeInput = _farmCodeController.text.trim().toUpperCase();
 
-    if (identifier.isEmpty || password.isEmpty) {
+    if (identifier.isEmpty || password.isEmpty || farmCodeInput.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            isArabic ? 'الرجاء إدخال البريد أو اسم المستخدم مع كلمة المرور' : 'Please enter your email/username and password',
+            isArabic ? 'الرجاء إدخال اسم المستخدم/البريد وكلمة المرور وكود المزرعة' : 'Please enter your email/username, password and Farm Code',
           ),
           backgroundColor: Colors.orange.shade800,
         ),
@@ -113,7 +118,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       String resolvedEmail = identifier;
 
-      // إذا لم يكن المدخل بريداً إلكترونياً (لا يحتوي على @)، نبحث في Firestore عن اسم المستخدم
+      // فحص المدخل: إذا كان لا يحتوي على @ نعامله كاسم مستخدم
       if (!identifier.contains('@')) {
         final query = await FirebaseFirestore.instance
             .collection('users')
@@ -124,16 +129,11 @@ class _LoginScreenState extends State<LoginScreen> {
         if (query.docs.isNotEmpty) {
           resolvedEmail = query.docs.first.data()['email'] ?? identifier;
         } else {
-          // محاولة بحث غير حساسة لحالة الأحرف
-          final nameQuery = await FirebaseFirestore.instance
-              .collection('users')
-              .where('name', isEqualTo: identifier)
-              .limit(1)
-              .get();
-
-          if (nameQuery.docs.isNotEmpty) {
-            resolvedEmail = nameQuery.docs.first.data()['email'] ?? identifier;
-          }
+          // اسم المستخدم غير موجود
+          throw FirebaseAuthException(
+            code: 'user-not-found',
+            message: 'اسم المستخدم غير مسجل في النظام',
+          );
         }
       }
 
@@ -151,6 +151,26 @@ class _LoginScreenState extends State<LoginScreen> {
           final role = uData['role'] ?? 'worker';
           final farmCode = uData['farm_code'] ?? '';
 
+          // التحقق من تطابق كود المزرعة
+          if (farmCode.isNotEmpty && farmCode.toUpperCase() != farmCodeInput) {
+            // تسجيل الخروج وإبلاغ المستخدم بخطأ الكود
+            await FirebaseAuth.instance.signOut();
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    isArabic
+                        ? 'كود المزرعة غير صحيح! تأكد من الكود الموجود لديك وحاول مجدداً'
+                        : 'Invalid Farm Code! Please check the code provided by your farm owner and try again.',
+                  ),
+                  backgroundColor: Colors.red.shade700,
+                  duration: const Duration(seconds: 4),
+                ),
+              );
+            }
+            return;
+          }
+
           if (farmCode.isNotEmpty) {
             FarmNotificationService.notifyUserLogin(name, role, farmCode);
           }
@@ -166,11 +186,13 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       String message = isArabic ? 'فشل تسجيل الدخول: ${e.message}' : 'Login failed: ${e.message}';
       if (e.code == 'user-not-found') {
-        message = isArabic ? 'لا يوجد حساب مسجل بهذا البريد أو اسم المستخدم' : 'User not found';
+        message = isArabic ? 'الحساب غير موجود، تأكد من اسم المستخدم أو البريد الإلكتروني' : 'User not found';
       } else if (e.code == 'wrong-password' || e.code == 'invalid-credential') {
         message = isArabic ? 'كلمة المرور أو البريد غير صحيح' : 'Wrong password or identifier';
       } else if (e.code == 'invalid-email') {
         message = isArabic ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format';
+      } else if (e.code == 'network-request-failed') {
+        message = isArabic ? 'تأكد من الاتصال بالإنترنت' : 'Check your internet connection';
       }
 
       if (mounted) {
@@ -178,23 +200,13 @@ class _LoginScreenState extends State<LoginScreen> {
           SnackBar(
             content: Text(message),
             backgroundColor: Colors.red.shade700,
-            action: SnackBarAction(
-              label: isArabic ? 'دخول تجريبي' : 'Demo Login',
-              textColor: Colors.white,
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
-                );
-              },
-            ),
           ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red.shade700),
+          SnackBar(content: Text(isArabic ? 'حدث خطأ غير متوقع: $e' : 'Error: $e'), backgroundColor: Colors.red.shade700),
         );
       }
     } finally {
@@ -204,87 +216,130 @@ class _LoginScreenState extends State<LoginScreen> {
 
   // استعادة كلمة المرور
   void _showForgotPasswordDialog(bool isArabic) {
-    final emailCtrl = TextEditingController(text: _identifierController.text.contains('@') ? _identifierController.text : '');
-    final phoneCtrl = TextEditingController();
+    final identifierCtrl = TextEditingController(text: _identifierController.text);
+    bool isResetting = false;
 
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            const Icon(Icons.lock_reset_rounded, color: Color(0xFF2E7D32)),
-            const SizedBox(width: 8),
-            Text(isArabic ? 'استعادة كلمة المرور' : 'Reset Password', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              isArabic
-                  ? 'أدخل بريدك الإلكتروني المسجل أو رقم الهاتف لإرسال رابط إعادة تعيين كلمة المرور:'
-                  : 'Enter your registered email or phone to receive reset instructions:',
-              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+      builder: (ctx) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: Row(
+              children: [
+                const Icon(Icons.lock_reset_rounded, color: Color(0xFF2E7D32)),
+                const SizedBox(width: 8),
+                Text(isArabic ? 'استعادة كلمة المرور' : 'Reset Password', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              ],
             ),
-            const SizedBox(height: 14),
-            TextField(
-              controller: emailCtrl,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: isArabic ? 'البريد الإلكتروني' : 'Email Address',
-                prefixIcon: const Icon(Icons.email_outlined, color: Color(0xFF2E7D32), size: 20),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isArabic
+                      ? 'أدخل اسم المستخدم، البريد الإلكتروني، أو رقم الهاتف لإرسال رابط إعادة تعيين كلمة المرور:'
+                      : 'Enter your username, email, or phone to receive reset instructions:',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: identifierCtrl,
+                  decoration: InputDecoration(
+                    labelText: isArabic ? 'اسم المستخدم / البريد / الهاتف' : 'Username / Email / Phone',
+                    prefixIcon: const Icon(Icons.search_rounded, color: Color(0xFF2E7D32), size: 20),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: isResetting ? null : () => Navigator.pop(ctx),
+                child: Text(isArabic ? 'إلغاء' : 'Cancel', style: TextStyle(color: Colors.grey.shade600)),
               ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: phoneCtrl,
-              keyboardType: TextInputType.phone,
-              decoration: InputDecoration(
-                labelText: isArabic ? 'أو رقم الهاتف (اختياري)' : 'Or Phone Number (Optional)',
-                prefixIcon: const Icon(Icons.phone_outlined, color: Color(0xFF2E7D32), size: 20),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
+                onPressed: isResetting ? null : () async {
+                  final input = identifierCtrl.text.trim();
+                  if (input.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(isArabic ? 'الرجاء إدخال بيانات صالحة' : 'Please enter valid data'), backgroundColor: Colors.orange),
+                    );
+                    return;
+                  }
+                  
+                  setDialogState(() => isResetting = true);
+                  
+                  try {
+                    String targetEmail = input;
+
+                    // إذا لم يكن بريداً إلكترونياً، ابحث في Firestore عن اسم المستخدم أو رقم الهاتف
+                    if (!input.contains('@')) {
+                      final usersRef = FirebaseFirestore.instance.collection('users');
+                      
+                      // بحث باسم المستخدم
+                      var query = await usersRef.where('username', isEqualTo: input.toLowerCase()).limit(1).get();
+                      
+                      // إذا لم يتم العثور عليه، جرب البحث برقم الهاتف
+                      if (query.docs.isEmpty) {
+                        query = await usersRef.where('phone', isEqualTo: input).limit(1).get();
+                      }
+
+                      if (query.docs.isNotEmpty) {
+                        targetEmail = query.docs.first.data()['email'] ?? '';
+                        if (targetEmail.isEmpty) {
+                           throw Exception(isArabic ? 'لا يوجد بريد إلكتروني مرتبط بهذا الحساب' : 'No email associated with this account');
+                        }
+                      } else {
+                        throw Exception(isArabic ? 'الحساب غير موجود' : 'Account not found');
+                      }
+                    }
+
+                    await FirebaseAuth.instance.sendPasswordResetEmail(email: targetEmail);
+                    
+                    if (ctx.mounted) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(isArabic ? 'تم إرسال رابط إعادة التعيين بنجاح ✅ يرجى تفقد صندوق الوارد والرسائل غير المرغوب فيها (Spam)' : 'Password reset link sent ✅ Please check your inbox and spam folders'),
+                          backgroundColor: const Color(0xFF2E7D32),
+                          duration: const Duration(seconds: 4),
+                        ),
+                      );
+                    }
+                  } on FirebaseAuthException catch (e) {
+                    String message = e.message ?? 'Error';
+                    if (e.code == 'user-not-found') {
+                      message = isArabic ? 'الحساب غير موجود' : 'User not found';
+                    } else if (e.code == 'invalid-email') {
+                      message = isArabic ? 'صيغة البريد الإلكتروني غير صحيحة' : 'Invalid email format';
+                    } else if (e.code == 'network-request-failed') {
+                      message = isArabic ? 'تأكد من الاتصال بالإنترنت' : 'Check your internet connection';
+                    }
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(message), backgroundColor: Colors.red),
+                      );
+                    }
+                  } catch (e) {
+                    if (ctx.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text(e.toString().replaceAll('Exception: ', '')), backgroundColor: Colors.red),
+                      );
+                    }
+                  } finally {
+                    if (ctx.mounted) {
+                      setDialogState(() => isResetting = false);
+                    }
+                  }
+                },
+                child: isResetting
+                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : Text(isArabic ? 'إرسال الرابط' : 'Send Link', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
               ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: Text(isArabic ? 'إلغاء' : 'Cancel', style: TextStyle(color: Colors.grey.shade600)),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF2E7D32)),
-            onPressed: () async {
-              final email = emailCtrl.text.trim();
-              if (email.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(isArabic ? 'الرجاء إدخال البريد الإلكتروني' : 'Please enter your email'), backgroundColor: Colors.orange),
-                );
-                return;
-              }
-              try {
-                await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-                if (ctx.mounted) {
-                  Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text(isArabic ? 'تم إرسال رابط إعادة التعيين إلى بريدك الإلكتروني ✅' : 'Password reset link sent to your email ✅'),
-                      backgroundColor: const Color(0xFF2E7D32),
-                    ),
-                  );
-                }
-              } catch (e) {
-                if (ctx.mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-                  );
-                }
-              }
-            },
-            child: Text(isArabic ? 'إرسال الرابط' : 'Send Link', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-          ),
-        ],
+            ],
+          );
+        }
       ),
     );
   }
@@ -319,7 +374,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Center(
                       child: Column(
                         children: [
-                          Image.asset('assets/images/logo.png', width: 80, height: 80),
+                          Image.asset('assets/images/logo.jpg', width: 80, height: 80),
                           const SizedBox(height: 12),
                           const Text(
                             'TerraLogic',
@@ -388,6 +443,19 @@ class _LoginScreenState extends State<LoginScreen> {
                                 ),
                               ),
                             ),
+                            const SizedBox(height: 12),
+
+                            // حقل كود المزرعة
+                            TextField(
+                              controller: _farmCodeController,
+                              textCapitalization: TextCapitalization.characters,
+                              decoration: InputDecoration(
+                                labelText: isArabic ? 'كود المزرعة *' : 'Farm Code *',
+                                hintText: 'FARM-XXXX',
+                                prefixIcon: const Icon(Icons.gite_outlined, color: Color(0xFF2E7D32), size: 20),
+                                helperText: isArabic ? 'الكود الموجود لديك من مالك المزرعة' : 'Provided by your farm owner',
+                              ),
+                            ),
                             const SizedBox(height: 8),
 
                             // زر نسيت كلمة المرور
@@ -426,7 +494,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 13),
-                        side: BorderSide(color: const Color(0xFF2E7D32).withOpacity(0.4)),
+                        side: BorderSide(color: const Color(0xFF2E7D32).withValues(alpha: 0.4)),
                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
                         backgroundColor: Colors.white,
                       ),

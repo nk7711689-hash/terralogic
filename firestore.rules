@@ -1,0 +1,42 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function currentUser() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function sameFarm(farmCode) {
+      return signedIn() && currentUser().farm_code == farmCode;
+    }
+
+    function isManager() {
+      return signedIn() && currentUser().role in ['owner', 'manager', 'admin'];
+    }
+
+    function canDeleteFarmData(farmCode) {
+      return sameFarm(farmCode) &&
+        (isManager() ||
+          get(/databases/$(database)/documents/farms/$(farmCode)).data.allow_worker_delete == true);
+    }
+
+    match /diagnosis_history/{diagnosisId} {
+      allow read: if sameFarm(resource.data.farm_code);
+      allow create: if sameFarm(request.resource.data.farm_code);
+      allow delete: if canDeleteFarmData(resource.data.farm_code);
+      allow update: if false;
+    }
+
+    match /users/{userId} {
+      allow read: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /farms/{farmCode} {
+      allow read: if sameFarm(farmCode);
+    }
+  }
+}

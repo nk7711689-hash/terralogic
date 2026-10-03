@@ -36,6 +36,8 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
   String _selectedJoinRole = 'worker'; // 'worker' or 'manager'
   bool _isLoading = false;
+  bool _obscureCreatePass = true;
+  bool _obscureJoinPass = true;
 
   @override
   void initState() {
@@ -83,6 +85,36 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
   }
 
   // 1. إنشاء مزرعة جديدة (مالك / مدير عام)
+  // التحقق من صحة اسم المستخدم
+  String? _validateUsername(String username, bool isAr) {
+    if (username.isEmpty) {
+      return isAr ? 'اسم المستخدم مطلوب' : 'Username is required';
+    }
+    if (username.length < 3) {
+      return isAr ? 'اسم المستخدم يجب أن يكون 3 أحرف على الأقل' : 'Username must be at least 3 characters';
+    }
+    if (username.length > 20) {
+      return isAr ? 'اسم المستخدم يجب أن لا يتجاوز 20 حرفاً' : 'Username must not exceed 20 characters';
+    }
+    final usernameRegex = RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*$');
+    if (!usernameRegex.hasMatch(username)) {
+      return isAr
+          ? 'اسم المستخدم يجب أن يبدأ بحرف إنجليزي ويحتوي على أحرف وأرقام وشرطة سفلية فقط'
+          : 'Username must start with a letter and contain only letters, numbers, and underscores';
+    }
+    return null;
+  }
+
+  // فحص فرادة اسم المستخدم في Firestore
+  Future<bool> _isUsernameAvailable(String username) async {
+    final query = await FirebaseFirestore.instance
+        .collection('users')
+        .where('username', isEqualTo: username.toLowerCase())
+        .limit(1)
+        .get();
+    return query.docs.isEmpty;
+  }
+
   Future<void> _handleCreateFarm(bool isAr) async {
     final name = _createNameCtrl.text.trim();
     final username = _createUsernameCtrl.text.trim().toLowerCase();
@@ -91,12 +123,22 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     final phone = _createPhoneCtrl.text.trim();
     final pass = _createPassCtrl.text.trim();
 
-    if (name.isEmpty || email.isEmpty || pass.isEmpty) {
+    // التحقق من الحقول الإجبارية
+    if (name.isEmpty || email.isEmpty || pass.isEmpty || farmName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(isAr ? 'الرجاء تعبئة الحقول الأساسية المطلوبة' : 'Please fill all required fields'),
+          content: Text(isAr ? 'الرجاء تعبئة جميع الحقول الإجبارية (*)' : 'Please fill all required fields (*)'),
           backgroundColor: Colors.orange.shade800,
         ),
+      );
+      return;
+    }
+
+    // التحقق من صحة اسم المستخدم
+    final usernameError = _validateUsername(username, isAr);
+    if (usernameError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(usernameError), backgroundColor: Colors.orange.shade800),
       );
       return;
     }
@@ -104,6 +146,20 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     setState(() => _isLoading = true);
 
     try {
+      // فحص فرادة اسم المستخدم
+      final available = await _isUsernameAvailable(username);
+      if (!available) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isAr ? 'اسم المستخدم "$username" مستخدم بالفعل، الرجاء اختيار اسم آخر' : 'Username "$username" is already taken, please choose another'),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        }
+        return;
+      }
+
       UserCredential cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
         email: email,
         password: pass,
@@ -115,7 +171,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         final adminKey = _generateUniqueCode('ADM');
         final workerInviteCode = _generateUniqueCode('WRK');
         final effectiveFarmName = farmName.isEmpty ? (isAr ? 'مزرعة $name' : '$name Farm') : farmName;
-        final effectiveUsername = username.isEmpty ? email.split('@').first : username;
+        final effectiveUsername = username.toLowerCase();
 
         // 1. حفظ المزرعة في Firestore
         await FirebaseFirestore.instance.collection('farms').doc(farmCode).set({
@@ -195,7 +251,8 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     final pass = _joinPassCtrl.text.trim();
     final farmCode = _joinFarmCodeCtrl.text.trim().toUpperCase();
     final adminKeyInput = _joinAdminKeyCtrl.text.trim().toUpperCase();
-    final workerInviteInput = _joinWorkerInviteCtrl.text.trim().toUpperCase();
+    // workerInviteCtrl preserved for future use (invite code validation)
+    _joinWorkerInviteCtrl.text.trim();
 
     if (name.isEmpty || email.isEmpty || pass.isEmpty || farmCode.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -207,9 +264,33 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
       return;
     }
 
+    // التحقق من صحة اسم المستخدم
+    final usernameError = _validateUsername(username, isAr);
+    if (usernameError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(usernameError), backgroundColor: Colors.orange.shade800),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
+      // فحص فرادة اسم المستخدم
+      final available = await _isUsernameAvailable(username);
+      if (!available) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(isAr ? 'اسم المستخدم "$username" مستخدم بالفعل، الرجاء اختيار اسم آخر' : 'Username "$username" is already taken, please choose another'),
+              backgroundColor: Colors.red.shade700,
+            ),
+          );
+        }
+        setState(() => _isLoading = false);
+        return;
+      }
+
       // فحص وجود المزرعة في قاعدة البيانات
       final farmDoc = await FirebaseFirestore.instance.collection('farms').doc(farmCode).get();
       if (!farmDoc.exists) {
@@ -226,7 +307,6 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
       final fData = farmDoc.data() as Map<String, dynamic>;
       final validAdminKey = (fData['admin_key'] ?? fData['manager_code'] ?? '').toString().toUpperCase();
-      final validWorkerCode = (fData['worker_code'] ?? '').toString().toUpperCase();
 
       String assignedRole = 'worker';
       String roleTitleAr = 'عامل مزرعة';
@@ -256,7 +336,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
 
       User? user = cred.user;
       if (user != null) {
-        final effectiveUsername = username.isEmpty ? email.split('@').first : username;
+        final effectiveUsername = username.toLowerCase();
 
         // حفظ ملف المستخدم
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
@@ -384,9 +464,9 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withOpacity(0.25)),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -457,7 +537,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
                         borderRadius: BorderRadius.circular(10),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.04),
+                            color: Colors.black.withValues(alpha: 0.04),
                             blurRadius: 4,
                             offset: const Offset(0, 2),
                           ),
@@ -527,10 +607,15 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         const SizedBox(height: 10),
         TextField(
           controller: _createUsernameCtrl,
+          inputFormatters: [
+            // حظر المسافات والأحرف الخاصة
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
+          ],
           decoration: InputDecoration(
-            labelText: isAr ? 'اسم المستخدم (اختياري)' : 'Username (Optional)',
-            hintText: isAr ? 'مثال: abu_ahmed' : 'e.g. john_doe',
+            labelText: isAr ? 'اسم المستخدم *' : 'Username *',
+            hintText: isAr ? 'مثال: ahmed_farm (حروف، أرقام، _)' : 'e.g. john_farm (letters, numbers, _)',
             prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFF2E7D32), size: 20),
+            helperText: isAr ? 'يبدأ بحرف، 3-20 حرفاً، بدون مسافات' : 'Starts with letter, 3-20 chars, no spaces',
           ),
         ),
         const SizedBox(height: 10),
@@ -563,10 +648,14 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         const SizedBox(height: 10),
         TextField(
           controller: _createPassCtrl,
-          obscureText: true,
+          obscureText: _obscureCreatePass,
           decoration: InputDecoration(
             labelText: isAr ? 'كلمة المرور *' : 'Password *',
             prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF2E7D32), size: 20),
+            suffixIcon: IconButton(
+              icon: Icon(_obscureCreatePass ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey, size: 20),
+              onPressed: () => setState(() => _obscureCreatePass = !_obscureCreatePass),
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -601,10 +690,14 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         const SizedBox(height: 10),
         TextField(
           controller: _joinUsernameCtrl,
+          inputFormatters: [
+            FilteringTextInputFormatter.allow(RegExp(r'[a-zA-Z0-9_]')),
+          ],
           decoration: InputDecoration(
-            labelText: isAr ? 'اسم المستخدم (اختياري)' : 'Username (Optional)',
-            hintText: isAr ? 'مثال: worker_ali' : 'e.g. worker_ali',
+            labelText: isAr ? 'اسم المستخدم *' : 'Username *',
+            hintText: isAr ? 'مثال: worker_ali (حروف، أرقام، _)' : 'e.g. worker_ali (letters, numbers, _)',
             prefixIcon: const Icon(Icons.alternate_email_rounded, color: Color(0xFF2E7D32), size: 20),
+            helperText: isAr ? 'يبدأ بحرف، 3-20 حرفاً، بدون مسافات' : 'Starts with letter, 3-20 chars, no spaces',
           ),
         ),
         const SizedBox(height: 10),
@@ -628,10 +721,14 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         const SizedBox(height: 10),
         TextField(
           controller: _joinPassCtrl,
-          obscureText: true,
+          obscureText: _obscureJoinPass,
           decoration: InputDecoration(
             labelText: isAr ? 'كلمة المرور *' : 'Password *',
             prefixIcon: const Icon(Icons.lock_outline, color: Color(0xFF2E7D32), size: 20),
+            suffixIcon: IconButton(
+              icon: Icon(_obscureJoinPass ? Icons.visibility_outlined : Icons.visibility_off_outlined, color: Colors.grey, size: 20),
+              onPressed: () => setState(() => _obscureJoinPass = !_obscureJoinPass),
+            ),
           ),
         ),
         const SizedBox(height: 10),

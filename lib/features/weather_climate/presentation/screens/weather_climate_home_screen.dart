@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:terralogic/core/farm_session_service.dart';
 import 'package:terralogic/core/notification_service.dart';
+import 'package:terralogic/core/terra_theme.dart';
 import 'package:terralogic/features/weather_climate/data/weather_service.dart';
 import 'package:terralogic/features/weather_climate/data/market_service.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class WeatherClimateHomeScreen extends StatefulWidget {
   final bool isArabic;
   const WeatherClimateHomeScreen({super.key, this.isArabic = true});
 
   @override
-  State<WeatherClimateHomeScreen> createState() => _WeatherClimateHomeScreenState();
+  State<WeatherClimateHomeScreen> createState() =>
+      _WeatherClimateHomeScreenState();
 }
 
 class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
@@ -19,17 +22,18 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
   bool isLoading = true;
 
   String selectedCityKey = "Amman";
-  String _selectedGraphDataType = 'الحرارة';
   double currentLat = 31.95;
   double currentLon = 35.91;
   List<FlSpot> tempSpots = [];
   List<FlSpot> humiditySpots = [];
   List<FlSpot> windSpots = [];
-  
+  List<DateTime> forecastDates = [];
+
   List<Map<String, String>> _marketNews = [];
   bool _isMarketLoading = true;
 
-  final Map<String, ({String nameAr, String nameEn, double lat, double lon})> _governorates = {
+  final Map<String, ({String nameAr, String nameEn, double lat, double lon})>
+  _governorates = {
     'Amman': (nameAr: 'عمان', nameEn: 'Amman', lat: 31.95, lon: 35.91),
     'Irbid': (nameAr: 'إربد', nameEn: 'Irbid', lat: 32.55, lon: 35.85),
     'Ajloun': (nameAr: 'عجلون', nameEn: 'Ajloun', lat: 32.33, lon: 35.75),
@@ -53,7 +57,7 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
 
   Future<void> _loadMarketNews() async {
     final service = MarketService();
-    final news = await service.fetchMarketNews(); 
+    final news = await service.fetchMarketNews();
     if (mounted) {
       setState(() {
         _marketNews = news;
@@ -66,20 +70,43 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
     setState(() => isLoading = true);
 
     try {
-      final currentData = await _weatherService.fetchCurrentWeather(currentLat, currentLon);
-      final fData = await _weatherService.fetchWeatherForecast(currentLat, currentLon);
-      
+      final currentData = await _weatherService.fetchCurrentWeather(
+        currentLat,
+        currentLon,
+      );
+      final fData = await _weatherService.fetchWeatherForecast(
+        currentLat,
+        currentLon,
+      );
+
       List<dynamic> list = fData['list'];
       List<FlSpot> tSpots = [];
       List<FlSpot> hSpots = [];
       List<FlSpot> wSpots = [];
-      
+      List<DateTime> dates = [];
+
       for (int i = 0; i < 7; i++) {
         if (i * 8 < list.length) {
           var item = list[i * 8];
-          tSpots.add(FlSpot(i.toDouble(), double.parse(item['main']['temp'].toString())));
-          hSpots.add(FlSpot(i.toDouble(), double.parse(item['main']['humidity'].toString())));
-          wSpots.add(FlSpot(i.toDouble(), double.parse(item['wind']['speed'].toString())));
+          final date =
+              DateTime.tryParse(item['dt_txt']?.toString() ?? '') ??
+              DateTime.now().add(Duration(days: i));
+          dates.add(date);
+          tSpots.add(
+            FlSpot(i.toDouble(), double.parse(item['main']['temp'].toString())),
+          );
+          hSpots.add(
+            FlSpot(
+              i.toDouble(),
+              double.parse(item['main']['humidity'].toString()),
+            ),
+          );
+          wSpots.add(
+            FlSpot(
+              i.toDouble(),
+              double.parse(item['wind']['speed'].toString()),
+            ),
+          );
         }
       }
 
@@ -89,16 +116,25 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
           tempSpots = tSpots;
           humiditySpots = hSpots;
           windSpots = wSpots;
+          forecastDates = dates;
           isLoading = false;
         });
 
         // فحص الصقيع وإرسال إشعار إذا كانت الحرارة متدنية
-        final double? curTemp = double.tryParse(currentData['main']['temp'].toString());
+        final double? curTemp = double.tryParse(
+          currentData['main']['temp'].toString(),
+        );
         if (curTemp != null) {
           final farmCode = FarmSessionService.currentFarmCode;
-          final cName = widget.isArabic ? _governorates[selectedCityKey]!.nameAr : _governorates[selectedCityKey]!.nameEn;
+          final cName = widget.isArabic
+              ? _governorates[selectedCityKey]!.nameAr
+              : _governorates[selectedCityKey]!.nameEn;
           if (farmCode.isNotEmpty) {
-            FarmNotificationService.checkWeatherFrostRisk(curTemp, cName, farmCode);
+            FarmNotificationService.checkWeatherFrostRisk(
+              curTemp,
+              cName,
+              farmCode,
+            );
           }
         }
       }
@@ -112,18 +148,40 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
-    String cityName = isAr ? _governorates[selectedCityKey]!.nameAr : _governorates[selectedCityKey]!.nameEn;
+    String cityName = isAr
+        ? _governorates[selectedCityKey]!.nameAr
+        : _governorates[selectedCityKey]!.nameEn;
 
-    String temp = weatherData != null ? "${weatherData!['main']['temp'].toStringAsFixed(1)}°" : "24°";
-    String humidity = weatherData != null ? "${weatherData!['main']['humidity']}%" : "45%";
-    String windSpeed = weatherData != null 
-        ? "${weatherData!['wind']['speed']} ${isAr ? 'م/ث' : 'm/s'}" 
+    String temp = weatherData != null
+        ? "${weatherData!['main']['temp'].toStringAsFixed(1)}°"
+        : "24°";
+    String humidity = weatherData != null
+        ? "${weatherData!['main']['humidity']}%"
+        : "45%";
+    String windSpeed = weatherData != null
+        ? "${weatherData!['wind']['speed']} ${isAr ? 'م/ث' : 'm/s'}"
         : "12 ${isAr ? 'كم/س' : 'km/h'}";
+    final chartSpots = tempSpots;
+    final chartValues = chartSpots.map((spot) => spot.y).toList();
+    final chartMin = chartValues.isEmpty
+        ? 0.0
+        : chartValues.reduce((a, b) => a < b ? a : b);
+    final chartMax = chartValues.isEmpty
+        ? 30.0
+        : chartValues.reduce((a, b) => a > b ? a : b);
+    final chartPadding = ((chartMax - chartMin) * 0.15)
+        .clamp(1.0, 10.0)
+        .toDouble();
+    final chartMinY = chartMin - chartPadding;
+    final chartMaxY = chartMax + chartPadding;
+    final chartMaxX = forecastDates.length > 1
+        ? (forecastDates.length - 1).toDouble()
+        : 6.0;
 
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F9F7),
+        backgroundColor: TerraTheme.mist,
         appBar: AppBar(
           title: Text(
             isAr ? "الطقس وأسعار السوق" : "Weather & Market Prices",
@@ -141,13 +199,21 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
               child: DropdownButton<String>(
                 value: selectedCityKey,
                 underline: const SizedBox(),
-                icon: const Icon(Icons.location_on_outlined, color: Color(0xFF2E7D32), size: 16),
+                icon: const Icon(
+                  Icons.location_on_outlined,
+                  color: Color(0xFF2E7D32),
+                  size: 16,
+                ),
                 items: _governorates.entries.map((entry) {
                   return DropdownMenuItem<String>(
                     value: entry.key,
                     child: Text(
                       isAr ? entry.value.nameAr : entry.value.nameEn,
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2E7D32),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -166,8 +232,10 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
             const SizedBox(width: 8),
           ],
         ),
-        body: isLoading 
-            ? const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)))
+        body: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+              )
             : ListView(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
                 children: [
@@ -176,14 +244,14 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
-                        colors: [Color(0xFF2E7D32), Color(0xFF1B5E20)],
+                        colors: [TerraTheme.forest, TerraTheme.ink],
                         begin: Alignment.topRight,
                         end: Alignment.bottomLeft,
                       ),
                       borderRadius: BorderRadius.circular(20),
                       boxShadow: [
                         BoxShadow(
-                          color: const Color(0xFF2E7D32).withOpacity(0.2),
+                          color: TerraTheme.forest.withValues(alpha: 0.16),
                           blurRadius: 16,
                           offset: const Offset(0, 6),
                         ),
@@ -199,34 +267,70 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  isAr ? "طقس محافظة $cityName" : "$cityName Province Weather",
-                                  style: TextStyle(color: Colors.green.shade100, fontSize: 13),
+                                  isAr
+                                      ? "طقس محافظة $cityName"
+                                      : "$cityName Province Weather",
+                                  style: TextStyle(
+                                    color: Colors.green.shade100,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 const SizedBox(height: 4),
                                 Text(
                                   temp,
-                                  style: const TextStyle(color: Colors.white, fontSize: 44, fontWeight: FontWeight.bold),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 44,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ],
                             ),
-                            const Icon(Icons.wb_sunny_rounded, color: Colors.amber, size: 56),
+                            const Icon(
+                              Icons.wb_sunny_rounded,
+                              color: Colors.amber,
+                              size: 56,
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.12),
+                            color: Colors.white.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceAround,
                             children: [
-                              _buildWeatherMetric(Icons.water_drop_outlined, isAr ? "الرطوبة" : "Humidity", humidity),
-                              Container(width: 1, height: 24, color: Colors.white24),
-                              _buildWeatherMetric(Icons.air_rounded, isAr ? "الرياح" : "Wind", windSpeed),
-                              Container(width: 1, height: 24, color: Colors.white24),
-                              _buildWeatherMetric(Icons.thermostat_outlined, isAr ? "الحالة" : "Condition", isAr ? "معتدل" : "Fair"),
+                              _buildWeatherMetric(
+                                Icons.water_drop_outlined,
+                                isAr ? "الرطوبة" : "Humidity",
+                                humidity,
+                              ),
+                              Container(
+                                width: 1,
+                                height: 24,
+                                color: Colors.white24,
+                              ),
+                              _buildWeatherMetric(
+                                Icons.air_rounded,
+                                isAr ? "الرياح" : "Wind",
+                                windSpeed,
+                              ),
+                              Container(
+                                width: 1,
+                                height: 24,
+                                color: Colors.white24,
+                              ),
+                              _buildWeatherMetric(
+                                Icons.thermostat_outlined,
+                                isAr ? "الحالة" : "Condition",
+                                isAr ? "معتدل" : "Fair",
+                              ),
                             ],
                           ),
                         ),
@@ -237,7 +341,8 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
 
                   // 2. كرت المنحنى البياني لتوقعات الأسبوع
                   Card(
-                    elevation: 0,
+                    elevation: 1,
+                    shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                       side: BorderSide(color: Colors.grey.shade200),
@@ -251,45 +356,93 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                isAr ? "📊 توقعات $_selectedGraphDataType الأسبوعية" : "📊 Weekly Forecast",
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1B5E20)),
+                                isAr
+                                    ? '📊 درجات الحرارة خلال الأسبوع'
+                                    : '📊 Weekly temperatures',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Color(0xFF1B5E20),
+                                ),
                               ),
-                              PopupMenuButton<String>(
-                                icon: const Icon(Icons.tune_rounded, color: Colors.grey, size: 20),
-                                onSelected: (String val) => setState(() => _selectedGraphDataType = val),
-                                itemBuilder: (context) => [
-                                  PopupMenuItem(value: 'الحرارة', child: Text(isAr ? 'درجة الحرارة (°م)' : 'Temperature (°C)')),
-                                  PopupMenuItem(value: 'الرطوبة', child: Text(isAr ? 'الرطوبة (%)' : 'Humidity (%)')),
-                                  PopupMenuItem(value: 'الرياح', child: Text(isAr ? 'سرعة الرياح (م/ث)' : 'Wind Speed (m/s)')),
-                                ],
+                              Text(
+                                isAr ? '°م' : '°C',
+                                style: const TextStyle(
+                                  color: TerraTheme.olive,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ],
                           ),
                           const SizedBox(height: 12),
                           SizedBox(
-                            height: 160,
+                            height: 184,
                             child: LineChart(
                               LineChartData(
                                 gridData: FlGridData(
                                   show: true,
                                   drawVerticalLine: false,
-                                  getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade100, strokeWidth: 1),
+                                  getDrawingHorizontalLine: (value) => FlLine(
+                                    color: Colors.grey.shade100,
+                                    strokeWidth: 1,
+                                  ),
                                 ),
                                 titlesData: FlTitlesData(
-                                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                                  rightTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  topTitles: const AxisTitles(
+                                    sideTitles: SideTitles(showTitles: false),
+                                  ),
+                                  leftTitles: AxisTitles(
+                                    axisNameWidget: Text(
+                                      isAr ? '°م' : '°C',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: TerraTheme.blue.withValues(
+                                          alpha: 0.72,
+                                        ),
+                                      ),
+                                    ),
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize: 38,
+                                      interval: ((chartMaxY - chartMinY) / 4)
+                                          .clamp(1.0, double.infinity)
+                                          .toDouble(),
+                                      getTitlesWidget: (value, meta) => Text(
+                                        value.toStringAsFixed(0),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: TerraTheme.blue.withValues(
+                                            alpha: 0.72,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(
                                       showTitles: true,
+                                      interval: 1,
+                                      reservedSize: 34,
                                       getTitlesWidget: (value, meta) {
-                                        final daysAr = ['أحد', 'إثنين', 'ثلاثاء', 'أربعاء', 'خميس', 'جمعة', 'سبت'];
-                                        final daysEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                                         int idx = value.toInt();
-                                        if (idx >= 0 && idx < daysAr.length) {
+                                        if (idx >= 0 &&
+                                            idx < forecastDates.length) {
+                                          final date = forecastDates[idx];
                                           return Padding(
-                                            padding: const EdgeInsets.only(top: 6.0),
-                                            child: Text(isAr ? daysAr[idx] : daysEn[idx], style: TextStyle(fontSize: 10, color: Colors.grey.shade600)),
+                                            padding: const EdgeInsets.only(
+                                              top: 6.0,
+                                            ),
+                                            child: Text(
+                                              '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}',
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: TerraTheme.blue
+                                                    .withValues(alpha: 0.72),
+                                              ),
+                                            ),
                                           );
                                         }
                                         return const Text('');
@@ -298,31 +451,23 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                                   ),
                                 ),
                                 borderData: FlBorderData(show: false),
+                                clipData: const FlClipData.all(),
                                 minX: 0,
-                                maxX: 6,
+                                maxX: chartMaxX,
+                                minY: chartMinY,
+                                maxY: chartMaxY,
                                 lineBarsData: [
                                   LineChartBarData(
-                                    spots: _selectedGraphDataType == 'الحرارة'
-                                        ? tempSpots
-                                        : _selectedGraphDataType == 'الرطوبة'
-                                            ? humiditySpots
-                                            : windSpots,
+                                    spots: chartSpots,
                                     isCurved: true,
-                                    color: _selectedGraphDataType == 'الحرارة'
-                                        ? Colors.orange.shade700
-                                        : _selectedGraphDataType == 'الرطوبة'
-                                            ? Colors.blue.shade600
-                                            : Colors.teal.shade600,
+                                    color: TerraTheme.olive,
                                     barWidth: 3,
                                     dotData: const FlDotData(show: true),
                                     belowBarData: BarAreaData(
                                       show: true,
-                                      color: (_selectedGraphDataType == 'الحرارة'
-                                              ? Colors.orange
-                                              : _selectedGraphDataType == 'الرطوبة'
-                                                  ? Colors.blue
-                                                  : Colors.teal)
-                                          .withOpacity(0.08),
+                                      color: TerraTheme.olive.withValues(
+                                        alpha: 0.08,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -340,11 +485,24 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        isAr ? "🏪 أخبار وأسعار السوق المركزي" : "🏪 Central Market News & Prices",
-                        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Color(0xFF1B5E20)),
+                        isAr
+                            ? "🏪 أخبار وأسعار السوق المركزي"
+                            : "🏪 Central Market News & Prices",
+                        style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF1B5E20),
+                        ),
                       ),
                       if (_isMarketLoading)
-                        const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: Color(0xFF2E7D32))),
+                        const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Color(0xFF2E7D32),
+                          ),
+                        ),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -359,33 +517,56 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                       ),
                       child: Center(
                         child: Text(
-                          isAr ? "لا توجد أخبار سوق حالية، يتم التحديث دورياً" : "No live market news at the moment, updating periodically",
-                          style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
+                          isAr
+                              ? "لا توجد أخبار سوق حالية، يتم التحديث دورياً"
+                              : "No live market news at the moment, updating periodically",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
                         ),
                       ),
                     )
                   else
                     ..._marketNews.map((news) {
                       return Card(
-                        elevation: 0,
+                        elevation: 1,
+                        shadowColor: TerraTheme.ink.withValues(alpha: 0.05),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                           side: BorderSide(color: Colors.grey.shade200),
                         ),
-                        child: ListTile(
-                          leading: Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
-                              borderRadius: BorderRadius.circular(10),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () =>
+                              _openMarketStory(news['link'] ?? '', isAr),
+                          child: ListTile(
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFE8F5E9),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.newspaper_rounded,
+                                color: Color(0xFF2E7D32),
+                                size: 20,
+                              ),
                             ),
-                            child: const Icon(Icons.newspaper_rounded, color: Color(0xFF2E7D32), size: 20),
-                          ),
-                          title: Text(
-                            news['title'] ?? '',
-                            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                            title: Text(
+                              news['title'] ?? '',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            trailing: const Icon(
+                              Icons.open_in_new_rounded,
+                              size: 18,
+                              color: Color(0xFF2E7D32),
+                            ),
                           ),
                         ),
                       );
@@ -401,9 +582,35 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
       children: [
         Icon(icon, color: Colors.white, size: 18),
         const SizedBox(height: 4),
-        Text(value, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-        Text(label, style: TextStyle(color: Colors.green.shade100, fontSize: 10)),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+        Text(
+          label,
+          style: TextStyle(color: Colors.green.shade100, fontSize: 10),
+        ),
       ],
+    );
+  }
+
+  Future<void> _openMarketStory(String rawLink, bool isAr) async {
+    final link = Uri.tryParse(rawLink);
+    if (link != null && await canLaunchUrl(link)) {
+      await launchUrl(link, mode: LaunchMode.externalApplication);
+      return;
+    }
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          isAr ? 'تعذر فتح رابط الخبر' : 'Could not open the news link',
+        ),
+      ),
     );
   }
 }

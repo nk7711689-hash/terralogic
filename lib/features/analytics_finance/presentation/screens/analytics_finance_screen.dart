@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
-import '../../../../core/language_controller.dart';
+import '../../../../core/farm_session_service.dart';
+import '../../../../core/terra_theme.dart';
 
 class AnalyticsFinanceScreen extends StatefulWidget {
   final bool isArabic;
@@ -12,7 +13,7 @@ class AnalyticsFinanceScreen extends StatefulWidget {
 }
 
 class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
-  String viewType = 'شهر'; 
+  String viewType = 'شهر';
   DateTime selectedDate = DateTime.now();
 
   static double _toDouble(dynamic val) {
@@ -38,6 +39,55 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
     return 0.0;
   }
 
+  static double _axisInterval(double range) {
+    if (range <= 0) return 1;
+    final raw = range / 4;
+    final magnitude = _pow10(raw);
+    final normalized = raw / magnitude;
+    final step = normalized <= 1
+        ? 1
+        : normalized <= 2
+        ? 2
+        : normalized <= 5
+        ? 5
+        : 10;
+    return step * magnitude;
+  }
+
+  static double _pow10(double value) {
+    var result = 1.0;
+    if (value >= 1) {
+      while (result * 10 <= value) {
+        result *= 10;
+      }
+    } else {
+      while (result > value) {
+        result /= 10;
+      }
+    }
+    return result;
+  }
+
+  static String _formatAxisValue(double value) {
+    final absolute = value.abs();
+    if (absolute >= 1000000) return '${(value / 1000000).toStringAsFixed(1)}M';
+    if (absolute >= 1000) return '${(value / 1000).toStringAsFixed(1)}k';
+    return value.toStringAsFixed(value == value.roundToDouble() ? 0 : 1);
+  }
+
+  static DateTime? _cropDate(Map<String, dynamic> data) {
+    final harvestDate = data['harvestDate'];
+    if (harvestDate is Timestamp) return harvestDate.toDate();
+    if (harvestDate is DateTime) return harvestDate;
+    final parsedHarvestDate = DateTime.tryParse(harvestDate?.toString() ?? '');
+    if (parsedHarvestDate != null) return parsedHarvestDate;
+
+    final createdAt = data['createdAt'];
+    if (createdAt is Timestamp) return createdAt.toDate();
+    if (createdAt is DateTime) return createdAt;
+    return DateTime.tryParse(createdAt?.toString() ?? '');
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
@@ -45,7 +95,7 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F9F7),
+        backgroundColor: TerraTheme.mist,
         appBar: AppBar(
           title: Text(
             isAr ? "التحليل المالي والإنتاجي" : "Financial & Yield Analytics",
@@ -57,7 +107,8 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
           children: [
             // 1. بطاقة الرسمة الأولى: التكلفة مقابل المبيعات
             Card(
-              elevation: 0,
+              elevation: 1,
+              shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.grey.shade200),
@@ -72,21 +123,36 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                       children: [
                         Expanded(
                           child: Text(
-                            isAr ? "📊 التكلفة مقابل المبيعات لكل محصول" : "📊 Cost vs Sales per Crop",
-                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1B5E20)),
+                            isAr
+                                ? "📊 التكلفة مقابل المبيعات لكل محصول"
+                                : "📊 Cost vs Sales per Crop",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Color(0xFF1B5E20),
+                            ),
                           ),
                         ),
                         Row(
                           children: [
-                            _buildLegendBadge(Colors.blueGrey.shade400, isAr ? "التكلفة" : "Cost"),
+                            _buildLegendBadge(
+                              Colors.blueGrey.shade400,
+                              isAr ? "التكلفة" : "Cost",
+                            ),
                             const SizedBox(width: 8),
-                            _buildLegendBadge(const Color(0xFF2E7D32), isAr ? "المبيعات" : "Sales"),
+                            _buildLegendBadge(
+                              const Color(0xFF2E7D32),
+                              isAr ? "المبيعات" : "Sales",
+                            ),
                           ],
                         ),
                       ],
                     ),
                     const SizedBox(height: 16),
-                    SizedBox(height: 240, child: _buildProfitProductionBarChart(isAr)),
+                    SizedBox(
+                      height: 240,
+                      child: _buildProfitProductionBarChart(isAr),
+                    ),
                   ],
                 ),
               ),
@@ -95,7 +161,8 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
 
             // 2. بطاقة الرسمة الثانية: اتجاه الربحية عبر الزمن
             Card(
-              elevation: 0,
+              elevation: 1,
+              shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.grey.shade200),
@@ -109,11 +176,20 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          isAr ? "📈 منحنى صافي الأرباح" : "📈 Net Profit Trend",
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1B5E20)),
+                          isAr
+                              ? "📈 منحنى صافي الأرباح"
+                              : "📈 Net Profit Trend",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Color(0xFF1B5E20),
+                          ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: const Color(0xFFE8F5E9),
                             borderRadius: BorderRadius.circular(10),
@@ -121,16 +197,44 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                           child: DropdownButton<String>(
                             value: viewType,
                             underline: const SizedBox(),
-                            icon: const Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF2E7D32), size: 18),
+                            icon: const Icon(
+                              Icons.keyboard_arrow_down_rounded,
+                              color: Color(0xFF2E7D32),
+                              size: 18,
+                            ),
                             items: [
-                              DropdownMenuItem(value: 'شهر', child: Text(isAr ? 'عرض شهري' : 'Monthly View', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)))),
-                              DropdownMenuItem(value: 'سنة', child: Text(isAr ? 'عرض سنوي' : 'Yearly View', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)))),
+                              DropdownMenuItem(
+                                value: 'شهر',
+                                child: Text(
+                                  isAr ? 'عرض شهري' : 'Monthly View',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32),
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'سنة',
+                                child: Text(
+                                  isAr ? 'عرض سنوي' : 'Yearly View',
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32),
+                                  ),
+                                ),
+                              ),
                             ],
                             onChanged: (val) {
                               if (val != null) {
                                 setState(() => viewType = val);
-                                if (val == 'سنة') _showYearPicker(context, isAr);
-                                if (val == 'شهر') _showMonthPicker(context);
+                                if (val == 'سنة') {
+                                  _showYearPicker(context, isAr);
+                                }
+                                if (val == 'شهر') {
+                                  _showMonthPicker(context);
+                                }
                               }
                             },
                           ),
@@ -147,7 +251,8 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
 
             // 3. بطاقة الرسمة الثالثة: توزيع الإنتاج
             Card(
-              elevation: 0,
+              elevation: 1,
+              shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),
                 side: BorderSide(color: Colors.grey.shade200),
@@ -172,23 +277,36 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
         const SizedBox(width: 4),
-        Text(label, style: TextStyle(fontSize: 11, color: Colors.grey.shade700)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 11, color: Colors.grey.shade700),
+        ),
       ],
     );
   }
 
   // الرسمة الأولى: الأعمدة البيانية
   Widget _buildProfitProductionBarChart(bool isAr) {
+    final farmCode = FarmSessionService.currentFarmCode;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('crops').snapshots(),
+      stream: farmCode.isEmpty
+          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          : FirebaseFirestore.instance
+                .collection('crops')
+                .where('farm_code', isEqualTo: farmCode)
+                .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+          );
         }
         if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
           return Center(
             child: Text(
-              isAr ? 'لا توجد بيانات محاصيل للمقارنة المالية' : 'No crop data available for financial comparison',
+              isAr
+                  ? 'لا توجد بيانات محاصيل للمقارنة المالية'
+                  : 'No crop data available for financial comparison',
               style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
             ),
           );
@@ -215,22 +333,51 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: TerraTheme.line.withValues(alpha: 0.72),
+                    strokeWidth: 1,
+                  ),
                 ),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 38,
+                      interval: finalMaxY / 4,
+                      getTitlesWidget: (value, meta) => Text(
+                        value >= 1000
+                            ? '${(value / 1000).toStringAsFixed(0)}k'
+                            : value.toStringAsFixed(0),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: TerraTheme.blue.withValues(alpha: 0.62),
+                        ),
+                      ),
+                    ),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
                       getTitlesWidget: (value, meta) {
                         int index = value.toInt();
                         if (index >= 0 && index < crops.length) {
-                          var data = crops[index].data() as Map<String, dynamic>;
+                          var data =
+                              crops[index].data() as Map<String, dynamic>;
                           return Padding(
-                            padding: const EdgeInsets.only(top: 6.0),
-                            child: Text(
-                              data['name']?.toString() ?? '',
-                              style: TextStyle(fontSize: 11, color: Colors.grey.shade800, fontWeight: FontWeight.bold),
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: SizedBox(
+                              width: 54,
+                              child: Text(
+                                data['name']?.toString() ?? '',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: TerraTheme.ink.withValues(alpha: 0.78),
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
                             ),
                           );
                         }
@@ -238,10 +385,15 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
+                alignment: BarChartAlignment.spaceAround,
                 barGroups: crops.asMap().entries.map((entry) {
                   int index = entry.key;
                   var data = entry.value.data() as Map<String, dynamic>;
@@ -251,13 +403,13 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                     barRods: [
                       BarChartRodData(
                         toY: _toDouble(data['cost']),
-                        color: Colors.blueGrey.shade400,
+                        color: const Color(0xFFA4B0B5),
                         width: 14,
                         borderRadius: BorderRadius.circular(4),
                       ),
                       BarChartRodData(
                         toY: _toDouble(data['sales']),
-                        color: const Color(0xFF2E7D32),
+                        color: TerraTheme.forest,
                         width: 14,
                         borderRadius: BorderRadius.circular(4),
                       ),
@@ -274,29 +426,39 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
 
   // الرسمة الثانية: الخطي
   Widget _buildCropTypeChart(bool isAr) {
+    final farmCode = FarmSessionService.currentFarmCode;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('crops').snapshots(),
+      stream: farmCode.isEmpty
+          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          : FirebaseFirestore.instance
+                .collection('crops')
+                .where('farm_code', isEqualTo: farmCode)
+                .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+          );
         }
         var crops = snapshot.hasData ? snapshot.data!.docs : [];
 
-        int totalPoints = (viewType == 'سنة') ? 12 : 31;
-        
+        final isYearView = viewType == 'سنة';
+        final totalPoints = isYearView
+            ? 12
+            : DateTime(selectedDate.year, selectedDate.month + 1, 0).day;
+
         List<FlSpot> spots = List.generate(totalPoints, (index) {
-          int unit = index + 1;
+          final unit = index + 1;
           var matchedCrops = crops.where((doc) {
-            Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-            String dateStr = data['harvestDate']?.toString() ?? '2026-01-01';
-            List<String> parts = dateStr.split('-');
-            if (parts.length != 3) return false;
-            int? y = int.tryParse(parts[0]);
-            int? m = int.tryParse(parts[1]);
-            int? d = int.tryParse(parts[2]);
-            if (y == null || m == null || d == null) return false;
-            DateTime h = DateTime(y, m, d);
-            return (viewType == 'سنة') ? (h.month == unit) : (h.day == unit);
+            final data = doc.data() as Map<String, dynamic>;
+            final date = _cropDate(data);
+            if (date == null) return false;
+            if (isYearView) {
+              return date.year == selectedDate.year && date.month == unit;
+            }
+            return date.year == selectedDate.year &&
+                date.month == selectedDate.month &&
+                date.day == unit;
           });
 
           double totalProfit = 0.0;
@@ -307,8 +469,19 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
           return FlSpot(index.toDouble(), totalProfit);
         });
 
-        double maxProfit = spots.isEmpty ? 100 : spots.map((s) => s.y).reduce((a, b) => a > b ? a : b);
-        double finalMaxY = (maxProfit <= 0) ? 100 : (maxProfit * 1.25);
+        final values = spots.map((spot) => spot.y).toList();
+        final dataMin = values.isEmpty
+            ? 0.0
+            : values.reduce((a, b) => a < b ? a : b);
+        final dataMax = values.isEmpty
+            ? 0.0
+            : values.reduce((a, b) => a > b ? a : b);
+        final padding = ((dataMax - dataMin).abs() * 0.15)
+            .clamp(10.0, double.infinity)
+            .toDouble();
+        final finalMinY = dataMin - padding;
+        final finalMaxY = dataMax + padding;
+        final interval = _axisInterval(finalMaxY - finalMinY);
 
         return SingleChildScrollView(
           scrollDirection: Axis.horizontal,
@@ -316,15 +489,50 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
             width: (totalPoints * 40.0).clamp(300.0, 2000.0),
             child: LineChart(
               LineChartData(
-                minY: 0,
+                minY: finalMinY,
                 maxY: finalMaxY,
                 gridData: FlGridData(
                   show: true,
                   drawVerticalLine: false,
-                  getDrawingHorizontalLine: (value) => FlLine(color: Colors.grey.shade200, strokeWidth: 1),
+                  getDrawingHorizontalLine: (value) => FlLine(
+                    color: TerraTheme.line.withValues(alpha: 0.72),
+                    strokeWidth: 1,
+                  ),
+                ),
+                extraLinesData: ExtraLinesData(
+                  horizontalLines: [
+                    HorizontalLine(
+                      y: 0,
+                      color: TerraTheme.ink.withValues(alpha: 0.55),
+                      strokeWidth: 1.2,
+                      dashArray: [6, 4],
+                      label: HorizontalLineLabel(
+                        show: true,
+                        alignment: Alignment.topRight,
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: TerraTheme.ink.withValues(alpha: 0.7),
+                        ),
+                        labelResolver: (_) => isAr ? 'تعادل' : 'Break-even',
+                      ),
+                    ),
+                  ],
                 ),
                 titlesData: FlTitlesData(
-                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 38,
+                      interval: interval,
+                      getTitlesWidget: (value, meta) => Text(
+                        _formatAxisValue(value),
+                        style: TextStyle(
+                          fontSize: 9,
+                          color: TerraTheme.blue.withValues(alpha: 0.62),
+                        ),
+                      ),
+                    ),
+                  ),
                   bottomTitles: AxisTitles(
                     sideTitles: SideTitles(
                       showTitles: true,
@@ -334,27 +542,37 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
                         return Padding(
                           padding: const EdgeInsets.only(top: 6.0),
                           child: Text(
-                            viewType == 'سنة' ? (isAr ? 'ش$val' : 'M$val') : '$val',
-                            style: TextStyle(fontSize: 10, color: Colors.grey.shade600),
+                            isYearView
+                                ? (isAr ? 'ش$val' : 'M$val')
+                                : '$val/${selectedDate.month}',
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: TerraTheme.blue.withValues(alpha: 0.70),
+                            ),
                           ),
                         );
                       },
                     ),
                   ),
-                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
+                  rightTitles: const AxisTitles(
+                    sideTitles: SideTitles(showTitles: false),
+                  ),
                 ),
                 borderData: FlBorderData(show: false),
+                clipData: const FlClipData.all(),
                 lineBarsData: [
                   LineChartBarData(
                     spots: spots,
                     isCurved: true,
-                    color: const Color(0xFF2E7D32),
+                    color: TerraTheme.forest,
                     barWidth: 3,
                     dotData: const FlDotData(show: true),
                     belowBarData: BarAreaData(
                       show: true,
-                      color: const Color(0xFF2E7D32).withOpacity(0.08),
+                      color: TerraTheme.sage.withValues(alpha: 0.30),
                     ),
                   ),
                 ],
@@ -371,7 +589,10 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Text(isAr ? "اختر السنة" : "Select Year", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        title: Text(
+          isAr ? "اختر السنة" : "Select Year",
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
         content: SizedBox(
           height: 200,
           width: 300,
@@ -410,18 +631,27 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
 
   // الرسمة الثالثة: الدائرية
   Widget _buildCropDistributionChart(bool isAr) {
+    final farmCode = FarmSessionService.currentFarmCode;
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('crops').snapshots(),
+      stream: farmCode.isEmpty
+          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          : FirebaseFirestore.instance
+                .collection('crops')
+                .where('farm_code', isEqualTo: farmCode)
+                .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Color(0xFF2E7D32)));
+          return const Center(
+            child: CircularProgressIndicator(color: Color(0xFF2E7D32)),
+          );
         }
-        
+
         var docs = snapshot.hasData ? snapshot.data!.docs : [];
         Map<String, double> dataMap = {};
         for (var doc in docs) {
           var data = doc.data() as Map<String, dynamic>;
-          String name = data['name']?.toString() ?? (isAr ? 'غير معروف' : 'Unknown');
+          String name =
+              data['name']?.toString() ?? (isAr ? 'غير معروف' : 'Unknown');
           double quantity = _toDouble(data['quantity']);
           dataMap[name] = (dataMap[name] ?? 0) + quantity;
         }
@@ -436,7 +666,9 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
             padding: const EdgeInsets.symmetric(vertical: 24.0),
             child: Center(
               child: Text(
-                isAr ? 'لا توجد بيانات محاصيل كافية لحساب التوزيع' : 'Insufficient crop data to calculate distribution',
+                isAr
+                    ? 'لا توجد بيانات محاصيل كافية لحساب التوزيع'
+                    : 'Insufficient crop data to calculate distribution',
                 style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
               ),
             ),
@@ -444,27 +676,34 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
         }
 
         List<Color> colors = [
-          const Color(0xFF2E7D32),
-          Colors.teal,
-          Colors.amber.shade700,
-          Colors.blue.shade600,
-          Colors.deepOrangeAccent,
+          TerraTheme.forest,
+          TerraTheme.blue,
+          TerraTheme.amber,
+          TerraTheme.olive,
+          TerraTheme.coral,
         ];
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              isAr ? "🥧 توزيع الإنتاج حسب المحصول" : "🥧 Yield Distribution by Crop",
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Color(0xFF1B5E20)),
+              isAr
+                  ? "🥧 توزيع الإنتاج حسب المحصول"
+                  : "🥧 Yield Distribution by Crop",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 14,
+                color: Color(0xFF1B5E20),
+              ),
             ),
             const SizedBox(height: 16),
             SizedBox(
-              height: 200,
+              height: 224,
               child: PieChart(
                 PieChartData(
                   sectionsSpace: 2,
-                  centerSpaceRadius: 40,
+                  centerSpaceRadius: 46,
+                  centerSpaceColor: TerraTheme.paper,
                   sections: dataMap.entries.map((entry) {
                     int index = dataMap.keys.toList().indexOf(entry.key);
                     double percentage = (entry.value / total) * 100;

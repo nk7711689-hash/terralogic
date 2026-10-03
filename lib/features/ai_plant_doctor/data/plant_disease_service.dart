@@ -88,7 +88,10 @@ class PlantDiseaseService {
     return candidates.where((id) => id.isNotEmpty).toList();
   }
 
-  Future<DiseaseLookupResult> lookup(String predictedLabel) async {
+  Future<DiseaseLookupResult> lookup(
+    String predictedLabel, {
+    String? expectedCrop,
+  }) async {
     if (predictedLabel.isEmpty) {
       return DiseaseLookupResult.fallback(predictedLabel);
     }
@@ -97,7 +100,7 @@ class PlantDiseaseService {
       // 1) مطابقة مباشرة بعدة أشكال للـ Document ID
       for (final docId in candidateDocumentIds(predictedLabel)) {
         final doc = await _firestore.collection(collectionName).doc(docId).get();
-        if (doc.exists) {
+        if (doc.exists && _belongsToCrop(doc.id, expectedCrop)) {
           final data = doc.data();
           if (data != null && data.isNotEmpty) {
             return DiseaseLookupResult.fromFirestore(data, doc.id);
@@ -111,7 +114,8 @@ class PlantDiseaseService {
 
       QueryDocumentSnapshot<Map<String, dynamic>>? bestMatch;
       for (final doc in allDocs) {
-        if (normalizeKey(doc.id) == normalizedTarget) {
+        if (normalizeKey(doc.id) == normalizedTarget &&
+          _belongsToCrop(doc.id, expectedCrop)) {
           bestMatch = doc;
           break;
         }
@@ -122,8 +126,9 @@ class PlantDiseaseService {
         final targetParts = _splitLabelParts(predictedLabel);
         for (final doc in allDocs) {
           final docParts = _splitLabelParts(doc.id);
-          if (targetParts.plant.isNotEmpty &&
+            if (targetParts.plant.isNotEmpty &&
               docParts.plant.isNotEmpty &&
+              _belongsToCrop(doc.id, expectedCrop) &&
               normalizeKey(targetParts.plant) == normalizeKey(docParts.plant) &&
               normalizeKey(targetParts.disease) ==
                   normalizeKey(docParts.disease)) {
@@ -142,6 +147,12 @@ class PlantDiseaseService {
     } catch (_) {
       return DiseaseLookupResult.fallback(predictedLabel);
     }
+  }
+
+  bool _belongsToCrop(String label, String? expectedCrop) {
+    if (expectedCrop == null || expectedCrop.trim().isEmpty) return true;
+    final plant = _splitLabelParts(label).plant;
+    return normalizeKey(plant) == normalizeKey(expectedCrop);
   }
 
   Future<List<QueryDocumentSnapshot<Map<String, dynamic>>>>

@@ -297,7 +297,7 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
             onPressed: () async {
               try {
                 await FirebaseAuth.instance.sendPasswordResetEmail(email: user.email!);
-                if (ctx.mounted) {
+                if (mounted && ctx.mounted) {
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
@@ -307,7 +307,7 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
                   );
                 }
               } catch (e) {
-                if (ctx.mounted) {
+                if (mounted && ctx.mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
                   );
