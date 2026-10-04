@@ -1,3 +1,5 @@
+import 'dart:developer' as developer;
+
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:terralogic/core/farm_session_service.dart';
@@ -538,6 +540,7 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                         ),
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
                           onTap: () =>
                               _openMarketStory(news['link'] ?? '', isAr),
                           child: ListTile(
@@ -599,16 +602,38 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
   }
 
   Future<void> _openMarketStory(String rawLink, bool isAr) async {
-    final link = Uri.tryParse(rawLink);
-    if (link != null && await canLaunchUrl(link)) {
-      await launchUrl(link, mode: LaunchMode.externalApplication);
-      return;
+    final value = rawLink.trim();
+    final link = Uri.tryParse(value);
+    final isWebLink =
+        link != null && (link.scheme == 'http' || link.scheme == 'https');
+    if (isWebLink) {
+      try {
+        // لا نعتمد على canLaunchUrl هنا؛ ففي Android قد يعيد false بسبب
+        // قيود package visibility رغم أن المتصفح يستطيع فتح الرابط.
+        final opened = await launchUrl(
+          link,
+          mode: LaunchMode.externalApplication,
+        );
+        if (opened) return;
+      } catch (error, stackTrace) {
+        developer.log(
+          'Failed to open market news link',
+          name: 'WeatherClimateHomeScreen',
+          error: error,
+          stackTrace: stackTrace,
+        );
+      }
     }
     if (!mounted) return;
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
           isAr ? 'تعذر فتح رابط الخبر' : 'Could not open the news link',
+        ),
+        action: SnackBarAction(
+          label: isAr ? 'إغلاق' : 'Dismiss',
+          onPressed: () {},
         ),
       ),
     );

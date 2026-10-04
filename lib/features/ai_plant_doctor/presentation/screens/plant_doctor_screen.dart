@@ -1859,8 +1859,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                     String displayText = crop;
                     if (crop == 'Auto') {
                       displayText = isAr
-                          ? '🤖 تحديد تلقائي (الذكاء الاصطناعي)'
-                          : '🤖 Auto Detect (AI)';
+                          ? 'اختر نوع المحصول أولاً'
+                          : 'Select the crop type first.';
                     } else if (isAr) {
                       displayText =
                           '${_cropTranslations[crop] ?? crop} ($crop)';
