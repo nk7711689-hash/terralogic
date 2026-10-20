@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -41,6 +42,342 @@ class DiseaseDetail {
 }
 
 const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
+  // ================= 1. حمضيات (Citrus) =================
+  'citrus_Sooty Mould': DiseaseDetail(
+    nameAr: 'العفن الهبابي (السخامي) في الحمضيات',
+    nameEn: 'Citrus Sooty Mould',
+    cropAr: 'حمضيات',
+    cropEn: 'Citrus',
+    descriptionAr:
+        'طبقة فحمية سوداء تشبه السخام تغطي أسطح الأوراق والأغصان والثمار نتيجة نمو فطريات رمية على الإفرازات العسلية للحشرات الماصة، مما يحجب الضوء ويعطل التمثيل الضوئي.',
+    descriptionEn:
+        'A dark powdery or velvety fungal layer on foliage and fruit growing on honeydew secreted by sucking insects, blocking sunlight and photosynthesis.',
+    treatmentsAr: [
+      'مكافحة الحشرات الثاقبة الماصة فوراً (المن، الذبابة البيضاء، البق الدقيقي) بمبيد حشري مناسب (أسيتامبريد أو إيميداكلوبريد)',
+      'غسيل الأشجار بالماء المضغوط مع الصابون الزراعي البوتاسي لإزالة الطبقة السوداء',
+      'رش مبيد نحاسي وقائي خفيف (أوكسي كلوريد النحاس) بعد تنظيف الشجرة لحمايتها',
+    ],
+    treatmentsEn: [
+      'Control honeydew-producing sucking pests immediately (Aphids, Whiteflies, Mealybugs) with Acetamiprid or Imidacloprid',
+      'Wash foliage with pressurized water and potassium agricultural soap to remove soot',
+      'Apply light protective copper spray (Copper Oxychloride) after cleaning',
+    ],
+    fertilizerAr:
+        'رش ورقي بالأحماض الأمينية والزنك والحديد المخلبي لتنشيط المجموع الخضري واستعادة كفاءة التمثيل الضوئي.',
+    fertilizerEn:
+        'Foliar spray with amino acids, chelated iron and zinc to restore vegetative vigor and photosynthetic activity.',
+  ),
+  'citrus_citrus_canker': DiseaseDetail(
+    nameAr: 'تقرح الحمضيات البكتيري',
+    nameEn: 'Citrus Canker',
+    cropAr: 'حمضيات',
+    cropEn: 'Citrus',
+    descriptionAr:
+        'مرض بكتيري خطير يسببه Xanthomonas axonopodis، يظهر على شكل بثور وبقع فلينية خشنة بارزة محاطة بهالة صفراء زيتية على الأوراق والسيقان والثمار مسبباً تساقطها وتشوهها.',
+    descriptionEn:
+        'Severe bacterial disease caused by Xanthomonas axonopodis, characterized by raised corky lesions with oily water-soaked margins and yellow halos on leaves and fruit.',
+    treatmentsAr: [
+      'رش مركبات النحاس الوقائية (هيدروكسيد النحاس أو أوكسي كلوريد النحاس) مع بدء خروج النموات الحديثة',
+      'تقليم الأفرع والأغصان المصابة بشدة والتخلص منها بالحرق مع تعقيم مقصات التقليم بالكحول',
+      'زراعة مصدات رياح حول البستان لتقليل جروح الرياح التي تنفذ منها البكتيريا',
+    ],
+    treatmentsEn: [
+      'Apply preventative copper sprays (Copper Hydroxide or Oxychloride) during new flushes',
+      'Prune and destroy heavily infected twigs, sanitizing shears between cuts',
+      'Establish windbreaks around orchards to minimize wind-driven leaf injuries',
+    ],
+    fertilizerAr:
+        'تسميد متوازن وتجنب الإفراط في النيتروجين الذي يولد نموات غضة ضعيفة المقاومة.',
+    fertilizerEn:
+        'Balanced NPK regime; avoid excessive quick-release nitrogen that produces succulent vulnerable tissues.',
+  ),
+  'citrus_healthy': DiseaseDetail(
+    nameAr: 'أشجار حمضيات سليمة',
+    nameEn: 'Healthy Citrus',
+    cropAr: 'حمضيات',
+    cropEn: 'Citrus',
+    descriptionAr:
+        'شجرة الحمضيات بحالة ممتازة، وأوراقها خضراء داكنة لامعة وسميكة، خالية من أي آفات أو بقع أو أعراض نقص عناصر.',
+    descriptionEn:
+        'Citrus tree is robust with lush, dark-green glossy leaves and no signs of bacterial, fungal, or insect infestations.',
+    treatmentsAr: [
+      'الاستمرار في برنامج الري المنتظم وتجنب ملامسة المياه المباشرة لجذع الشجرة لتفادي التصمغ',
+      'الفحص الوقائي الدوري للبراعم والنموات الغضة لحمايتها من صانعات الأنفاق',
+    ],
+    treatmentsEn: [
+      'Maintain regular irrigation while avoiding standing water against root flares',
+      'Conduct regular scoutings for citrus leafminer and pests during growth flushes',
+    ],
+    fertilizerAr:
+        'تسميد NPK متوازن مع إضافة الحديد المخلبي (Fe-EDDHA) والزنك والمنغنيز مرتين سنوياً.',
+    fertilizerEn:
+        'Balanced NPK program supplemented with chelated iron (Fe-EDDHA), zinc, and manganese.',
+  ),
+
+  // ================= 2. زيتون (Olive) =================
+  'olive_healthy': DiseaseDetail(
+    nameAr: 'أشجار زيتون سليمة',
+    nameEn: 'Healthy Olive',
+    cropAr: 'زيتون',
+    cropEn: 'Olive',
+    descriptionAr:
+        'أشجار الزيتون نضرة وقوية، أوراقها جلدية خضراء فضية خالية تماماً من بقع عين الطاووس أو ذبول الفيرتيسيليوم، ونموها الثمري ممتاز.',
+    descriptionEn:
+        'Olive tree shows excellent health with clean leathery foliage, silver-green undersides, and vigorous canopy structure.',
+    treatmentsAr: [
+      'إجراء التقليم السنوي التهوي لفتح قلب الشجرة لدخول أشعة الشمس والهواء',
+      'إزالة الأعشاب الضارة وحراثة خفيفة لحفظ رطوبة التربة',
+    ],
+    treatmentsEn: [
+      'Perform annual canopy thinning to allow light penetration and aeration',
+      'Keep tree basins free of weed competition and conserve soil moisture',
+    ],
+    fertilizerAr:
+        'إضافة سماد عضوي متخمر وسوبر فوسفات في الشتاء، ورش سماد البورون في الربيع لدعم عقد وجودة الثمار.',
+    fertilizerEn:
+        'Winter compost and superphosphate, followed by spring foliar Boron to boost fruit set.',
+  ),
+  'olive_peacock_spot': DiseaseDetail(
+    nameAr: 'مرض عين الطاووس في الزيتون',
+    nameEn: 'Olive Peacock Spot',
+    cropAr: 'زيتون',
+    cropEn: 'Olive',
+    descriptionAr:
+        'مرض فطري يسببه Spilocaea oleaginea، تظهر بقع دائرية مميزة تشبه ريش عين الطاووس بهالات متحدة المركز بلون بني ورمادي مصفر على الأوراق تؤدي إلى تساقط كثيف للأوراق وضعف الشجرة.',
+    descriptionEn:
+        'Fungal leaf spot caused by Spilocaea oleaginea, producing distinctive target-like concentric circles (peacock eyes) on leaves, leading to severe defoliation.',
+    treatmentsAr: [
+      'رش وقائي بمركبات النحاس (محلول بوردو أو أوكسي كلوريد النحاس) في الخريف وبداية الربيع قبل هطول الأمطار',
+      'تقليم الأفرع المتشابكة والسفلية لتحسين التهوية وخفض الرطوبة داخل الشجرة',
+      'جمع الأوراق المصابة المتساقطة على الأرض والتخلص منها لتقليل مصدر العدوى',
+    ],
+    treatmentsEn: [
+      'Preventative copper sprays (Bordeaux mixture or Copper Oxychloride) in autumn and early spring',
+      'Prune dense branches to enhance airflow and sunlight penetration',
+      'Collect and destroy fallen infected leaves to eradicate inoculum sources',
+    ],
+    fertilizerAr:
+        'التسميد بالبوتاسيوم لتقوية جدران الخلايا، وتجنب الإفراط في النيتروجين في الخريف.',
+    fertilizerEn:
+        'Apply Potassium to strengthen cuticle barriers; avoid late autumn nitrogen overfeeding.',
+  ),
+
+  // ================= 3. بطاطس (Potato) =================
+  'potato_Early_Blight': DiseaseDetail(
+    nameAr: 'اللفحة المبكرة في البطاطس',
+    nameEn: 'Potato Early Blight',
+    cropAr: 'بطاطس',
+    cropEn: 'Potato',
+    descriptionAr:
+        'مرض فطري يسببه Alternaria solani، يظهر على شكل بقع بنية داكنة ذات حلقات دائرية متحدة المركز (عين الهدف) على الأوراق السفلية أولاً، وتؤدي إلى اصفرار الأوراق وموتها وضعف نمو الدرنات.',
+    descriptionEn:
+        'Fungal disease caused by Alternaria solani, characterized by dark brown circular spots with concentric target-board rings on older foliage.',
+    treatmentsAr: [
+      'رش مبيد فطري وقائي أو علاجي (دايفينوكونازول، مانكوزيب، أو أزوكسيستروبين)',
+      'التخلص من بقايا النباتات المصابة وتدوير المحاصيل مع نباتات غير باذنجانية',
+      'تنظيم الري واستخدام الري بالتنقيط لتجنب ترطيب الأوراق',
+    ],
+    treatmentsEn: [
+      'Spray targeted fungicides (Difenoconazole, Mancozeb, or Azoxystrobin)',
+      'Destroy infected crop residues and rotate with non-solanaceous crops',
+      'Employ drip irrigation to prevent foliage wetting',
+    ],
+    fertilizerAr:
+        'تسميد بوتاسيوم عالي لرفع متانة الأوراق ومقاومة الفطريات + كالسيوم لتحسين جودة الدرنات.',
+    fertilizerEn:
+        'High potassium feeding for tissue resistance + Calcium for tuber peel strength.',
+  ),
+  'potato_Late_blight': DiseaseDetail(
+    nameAr: 'اللفحة المتأخرة في البطاطس',
+    nameEn: 'Potato Late Blight',
+    cropAr: 'بطاطس',
+    cropEn: 'Potato',
+    descriptionAr:
+        'مرض وبائي خطير يسببه شبه الفطر Phytophthora infestans، يسبب بقعاً مائية رمادية إلى بنية داكنة سريعة الانتشار على الأوراق والسيقان مع زغب أبيض خفيف على السطح السفلي في الطقس الرطب والبارد.',
+    descriptionEn:
+        'Aggressive oomycete pathogen (Phytophthora infestans) causing rapid water-soaked dark lesions, white underside sporulation, and devastating vine kill.',
+    treatmentsAr: [
+      'التدخل الفوري بمبيد جهازي قوي (سيموكسانيل + مانكوزيب، أو ميتالاكسيل، أو بروباموكارب)',
+      'التخلص الفوري من النباتات المصابة بشدة ودفنها بعيداً لمنع انتشار العدوى',
+      'التوقف الفوري عن الري العلوي وخفض الرطوبة قدر الإمكان',
+    ],
+    treatmentsEn: [
+      'Urgent intervention with systemic fungicides (Cymoxanil + Mancozeb, Metalaxyl, or Propamocarb)',
+      'Rogue out severely diseased plants and eliminate cull piles',
+      'Avoid overhead irrigation and reduce field moisture',
+    ],
+    fertilizerAr:
+        'رش فوسفيت البوتاسيوم لتحفيز المناعة الجهازية المكتسبة داخل أنسجة النبات.',
+    fertilizerEn:
+        'Potassium Phosphite foliar applications to trigger systemic acquired resistance (SAR).',
+  ),
+  'potato_healthy': DiseaseDetail(
+    nameAr: 'نبات بطاطس سليم',
+    nameEn: 'Healthy Potato',
+    cropAr: 'بطاطس',
+    cropEn: 'Potato',
+    descriptionAr:
+        'نبات البطاطس سليم وقوي ومكتمل النمو، أوراقه خضراء نضرة خالية من اللفحات أو الفيروسات، وتكوين الدرنات تحت التربة نشط وصحي.',
+    descriptionEn:
+        'Potato plant is vigorous with lush green canopy, free from blights or viruses, supporting active subterranean tuberization.',
+    treatmentsAr: [
+      'المحافظة على الترديم والتكويم حول السيقان لحماية الدرنات النامية من أشعة الشمس واخضرار القشرة',
+      'الري المنتظم والموزون لتجنب تشقق الدرنات',
+    ],
+    treatmentsEn: [
+      'Maintain regular hillings around stems to protect swelling tubers from sunburn and greening',
+      'Provide uniform moisture to avoid growth cracks and hollow hearts',
+    ],
+    fertilizerAr:
+        'تسميد NPK عالي البوتاسيوم (مثل 0-0-50 أو 12-12-36) لدعم تحجيم ونوعية الدرنات.',
+    fertilizerEn:
+        'High potassium NPK (such as 0-0-50 or 12-12-36) to maximize tuber sizing and solid content.',
+  ),
+
+  // ================= 4. طماطم (Tomato) =================
+  'tomato_early_blight': DiseaseDetail(
+    nameAr: 'اللفحة المبكرة في الطماطم (البندورة)',
+    nameEn: 'Tomato Early Blight',
+    cropAr: 'طماطم',
+    cropEn: 'Tomato',
+    descriptionAr:
+        'مرض فطري يسببه Alternaria solani، يبدأ كبقع بنية صغيرة على الأوراق القديمة وتتوسع لتشكل حلقات دائرية متحدة المركز وهالات صفراء، مسببة جفاف الأوراق وسقوطها.',
+    descriptionEn:
+        'Fungal pathogen (Alternaria solani) producing dark brown concentric rings surrounded by yellow halos on lower tomato foliage.',
+    treatmentsAr: [
+      'إزالة الأوراق السفلية المصابة والملامسة للتربة (التوريق الوقائي)',
+      'رش مبيد فطري كلوروثالونيل أو دايفينوكونازول أو أزوكسيستروبين',
+      'تجنب الري الرذاذي العلوي والاعتماد على الري بالتنقيط',
+    ],
+    treatmentsEn: [
+      'Prune off diseased lower soil-touching leaves',
+      'Apply Chlorothalonil, Difenoconazole, or Azoxystrobin fungicide',
+      'Use drip irrigation instead of sprinkler systems to keep foliage dry',
+    ],
+    fertilizerAr:
+        'سماد NPK عالي البوتاسيوم 12-12-36 مع كالسيوم بورون لتقوية النبات وجدران الخلايا.',
+    fertilizerEn:
+        'High-potassium NPK 12-12-36 combined with Calcium-Boron for cell wall fortitude.',
+  ),
+  'tomato_healthy': DiseaseDetail(
+    nameAr: 'نبات طماطم (بندورة) سليم',
+    nameEn: 'Healthy Tomato Plant',
+    cropAr: 'طماطم',
+    cropEn: 'Tomato',
+    descriptionAr:
+        'نبات الطماطم سليم وبحالة ممتازة وخالٍ تماماً من اللفحات والتبقعات والآفات، مع نمو خضري وزهري متوازن وقوي.',
+    descriptionEn:
+        'Tomato plant is in prime health with vigorous green foliage, strong stems, and flawless flower and fruit clusters.',
+    treatmentsAr: [
+      'الاستمرار في الرش الوقائي الدوري والري المنتظم بالتنقيط',
+      'التهوية الجيدة داخل البيوت المحمية وضبط درجات الحرارة والرطوبة',
+    ],
+    treatmentsEn: [
+      'Continue routine preventative scouting and drip irrigation schedule',
+      'Maintain greenhouse ventilation and climate management',
+    ],
+    fertilizerAr:
+        'برنامج تسميد NPK متوازن ومتدرج (عالي الفوسفور للتجذير، متوازن للنمو الخضري، وعالي البوتاسيوم للتحجيم).',
+    fertilizerEn:
+        'Balanced progressive NPK regime tailored to stage (High-P roots, 20-20-20 growth, High-K fruit sizing).',
+  ),
+  'tomato_late_blight': DiseaseDetail(
+    nameAr: 'اللفحة المتأخرة في الطماطم (البندورة)',
+    nameEn: 'Tomato Late Blight',
+    cropAr: 'طماطم',
+    cropEn: 'Tomato',
+    descriptionAr:
+        'مرض وبائي مائي شرس يسببه Phytophthora infestans، يصيب الأوراق والسيقان بمسحات مائية بنية داكنة سريعة الانتشار مع عفن مائي مسود على الثمار الخضراء في الطقس البارد الرطب.',
+    descriptionEn:
+        'Highly destructive water-mold disease causing rapidly spreading water-soaked dark lesions, white fungal growth under leaves, and rotting fruit.',
+    treatmentsAr: [
+      'رش فوري بمبيدات جهازية متخصصة (مانكوزيب + سيموكسانيل أو ميتالاكسيل أو ديميثومورف)',
+      'تهوية البيوت المحمية فوراً وخفض الرطوبة النسبية إلى أقل من 80%',
+      'التخلص من الثمار والأوراق المصابة بحرص خارج المزرعة',
+    ],
+    treatmentsEn: [
+      'Urgent foliar spray with systemic fungicides (Mancozeb + Cymoxanil, Metalaxyl, or Dimethomorph)',
+      'Ventilate greenhouses immediately to lower relative humidity below 80%',
+      'Cull and dispose of all infected fruit and foliage safely away from fields',
+    ],
+    fertilizerAr:
+        'سقاية فوسفيت البوتاسيوم لتحفيز الدفاعات الذاتية وتجنب إضافة أي سماد نيتروجيني حر أثناء الإصابة.',
+    fertilizerEn:
+        'Potassium Phosphite root drench for defense stimulation; avoid quick-acting nitrogen.',
+  ),
+
+  // ================= 5. قمح (Wheat) =================
+  'wheat_Brown_Rust': DiseaseDetail(
+    nameAr: 'صدأ الأوراق (الصدأ البني) في القمح',
+    nameEn: 'Wheat Brown Rust (Leaf Rust)',
+    cropAr: 'قمح',
+    cropEn: 'Wheat',
+    descriptionAr:
+        'مرض فطري يسببه Puccinia triticina، تظهر بثرات دائرية صغيرة بلون بني محمر أو برتقالي مبعثرة عشوائياً على أنصال الأوراق تطلق مسحوقاً برتقالياً عند لمسها، وتؤدي لجفاف الأوراق وموتها قبل امتلاء الحبوب.',
+    descriptionEn:
+        'Fungal leaf rust caused by Puccinia triticina, producing scattered round red-orange pustules on leaf blades that reduce grain fill and yield.',
+    treatmentsAr: [
+      'رش مبيد فطري جهازي من مجموعة التريازول (تيبوكونازول أو بروبيكونازول) عند أول ظهور للبثرات',
+      'زراعة الأصناف المعتمدة المقاومة للصدأ',
+      'التخلص من حشائش الحقول والنجيليات البرية المضيفة للفطر',
+    ],
+    treatmentsEn: [
+      'Apply systemic triazole fungicide (Tebuconazole or Propiconazole) at first sign of pustules',
+      'Plant certified rust-resistant wheat cultivars',
+      'Eradicate volunteer cereal grasses acting as secondary hosts',
+    ],
+    fertilizerAr:
+        'تسميد فوسفاتي وبوتاسي متوازن لدعم صلابة السيقان، وعدم الإفراط في التسميد الآزوتي المتأخر.',
+    fertilizerEn:
+        'Balanced phosphate and potash to support stem strength; avoid late excessive nitrogen bursts.',
+  ),
+  'wheat_healthy': DiseaseDetail(
+    nameAr: 'حقل قمح سليم',
+    nameEn: 'Healthy Wheat',
+    cropAr: 'قمح',
+    cropEn: 'Wheat',
+    descriptionAr:
+        'سنابل وأوراق القمح نضرة وخضراء يانعة، خالية تماماً من بثرات الأصداء أو البياض أو التبقعات، مع كفاءة نمو ممتازة وتفريع قوي.',
+    descriptionEn:
+        'Wheat field displays outstanding health with deep-green foliage, uniform tillering, clean flag leaves, and disease-free emerging spikes.',
+    treatmentsAr: [
+      'إدارة الري بكفاءة أثناء فترات التفريع والامتلاء وتجنب ركود المياه',
+      'مراقبة الحقل الدورية لاكتشاف أي بؤر مرضية مبكرة',
+    ],
+    treatmentsEn: [
+      'Manage irrigation carefully during tillering, heading, and grain-fill phases',
+      'Conduct regular field scouting to catch any early disease hotspots',
+    ],
+    fertilizerAr:
+        'برنامج تسميد نيتروجيني موزع على دفعات (عند الزراعة والتفريع وطرد السنابل) مع سلفات الزنك وعناصر صغرى.',
+    fertilizerEn:
+        'Split nitrogen fertilization schedule (planting, tillering, heading) fortified with Zinc sulfate.',
+  ),
+  'wheat_yellow_rust': DiseaseDetail(
+    nameAr: 'الصدأ الأصفر (الصدأ المخطط) في القمح',
+    nameEn: 'Wheat Yellow Rust (Stripe Rust)',
+    cropAr: 'قمح',
+    cropEn: 'Wheat',
+    descriptionAr:
+        'مرض وبائي خطير جداً يسببه Puccinia striiformis، يظهر على شكل بثرات صفراء ليمونية دقيقة مصطفة في خطوط طولية متوازية على طول عروق الورقة تشبه الخطوط الملونة، وينتشر بسرعة في الأجواء الباردة والرطبة مسبباً خسائر جسيمة.',
+    descriptionEn:
+        'Devastating stripe rust caused by Puccinia striiformis, exhibiting bright yellow pustules arranged in distinct linear stripes along leaf veins in cool humid weather.',
+    treatmentsAr: [
+      'الرش الفوري والشامل بمبيد فطري جهازي متخصص (تيبوكونازول، إيبوكسيكونازول، أو أزوكسيستروبين مع بروبيكونازول)',
+      'الاستجابة السريعة فور ظهور أي بؤرة صفراء في الحقل لمنع انتشار الوباء',
+      'اختيار أصناف قمح ذات مقاومة وراثية عالية للأصداء الصفراء',
+    ],
+    treatmentsEn: [
+      'Urgent whole-field spraying with high-efficacy systemic triazole/strobilurin fungicides',
+      'Act rapidly upon spotting the earliest yellow foci to prevent epidemic surges',
+      'Select genetics with proven stripe rust resistance genes',
+    ],
+    fertilizerAr:
+        'رش ورقي بسلفات البوتاسيوم لتعزيز سماكة جدر الخلايا وتجنب المغالاة في التسميد النيتروجيني.',
+    fertilizerEn:
+        'Foliar Potassium Sulfate to reinforce epidermal cells and reduce tissue susceptibility.',
+  ),
+
   'Apple___Apple_scab': DiseaseDetail(
     nameAr: 'جرب التفاح',
     nameEn: 'Apple Scab',
@@ -797,44 +1134,36 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   double? _confidence;
 
   Map<String, dynamic>? _diseaseResult;
+  String? _symptomCategoryTitle;
   String? _symptomAnalysisNote;
+  String? _symptomGuidance;
   String? _customFertilizerAdvice;
 
+  // معايير ضبط جودة ودقة التشخيص والحد الأدنى للثقة
+  static const double kConfidenceThreshold = 0.65; // الحد الأدنى المعتمد للثقة (65%)
+  bool _isLowConfidenceRejected = false;
+  double? _rejectedConfidence;
+  String? _rejectedCropAttempt;
+
   List<int> _inputShape = [1, 224, 224, 3];
-  int _numClasses = 38;
+  int _numClasses = 14;
 
   String _selectedCropType = 'Auto';
   final List<String> _cropOptions = [
     'Auto',
-    'Apple',
-    'Blueberry',
-    'Cherry',
-    'Corn',
-    'Grape',
-    'Peach',
-    'Pepper',
-    'Potato',
-    'Raspberry',
-    'Soybean',
-    'Squash',
-    'Strawberry',
     'Tomato',
+    'Potato',
+    'Olive',
+    'Wheat',
+    'Citrus',
   ];
 
   final Map<String, String> _cropTranslations = {
-    'Apple': 'تفاح',
-    'Blueberry': 'توت أزرق',
-    'Cherry': 'كرز',
-    'Corn': 'ذرة',
-    'Grape': 'عنب',
-    'Peach': 'خوخ',
-    'Pepper': 'فلفل',
-    'Potato': 'بطاطس',
-    'Raspberry': 'توت عليق',
-    'Soybean': 'فول صويا',
-    'Squash': 'قرع / كوسا',
-    'Strawberry': 'فراولة',
     'Tomato': 'طماطم',
+    'Potato': 'بطاطس',
+    'Olive': 'زيتون',
+    'Wheat': 'قمح',
+    'Citrus': 'حمضيات',
   };
 
   @override
@@ -858,7 +1187,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       final outputTensor = _interpreter!.getOutputTensor(0);
       _inputShape = List<int>.from(inputTensor.shape);
       final outShape = outputTensor.shape;
-      _numClasses = outShape.isNotEmpty ? outShape.last : 38;
+      _numClasses = outShape.isNotEmpty ? outShape.last : 14;
 
       final String response = await rootBundle.loadString('assets/labels.json');
       final data = json.decode(response);
@@ -867,6 +1196,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       if (!mounted) return;
       setState(() {
         _labels = loaded;
+        _numClasses = loaded.isNotEmpty ? loaded.length : _numClasses;
         _statusMessage = null;
       });
     } catch (e) {
@@ -888,137 +1218,382 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       _diseaseResult = null;
       _confidence = null;
       _statusMessage = null;
+      _isLowConfidenceRejected = false;
+      _rejectedConfidence = null;
+      _rejectedCropAttempt = null;
+      _symptomCategoryTitle = null;
       _symptomAnalysisNote = null;
+      _symptomGuidance = null;
       _customFertilizerAdvice = null;
     });
 
     await _classifyAndDiagnose();
   }
 
-  /// محرك ذكي لتحليل ملاحظات وأعراض المزارع وتحديد نقص العناصر والسماد الأنسب
-  ({String analysis, String fertilizer, String treatment}) _analyzeFarmerNotes(
+  /// محرك ذكي تفاعلي لتحليل ملاحظات المزارع (المدة، ثبات الحجم، الرطوبة، التزهير، ونقص العناصر)
+  ({
+    String categoryTitle,
+    String analysis,
+    String guidance,
+    String fertilizer,
+    String treatment,
+  }) _analyzeFarmerNotes(
     String notes,
     bool isAr,
   ) {
     String text = notes.toLowerCase();
 
+    // 1. مدة الإصابة وثبات الحجم / توقف النمو (مثل: "الها شهر نفس الحجم"، "توقف النمو"، "ما بتكبر")
     if (text.contains('نفس الحجم') ||
+        text.contains('شهر') ||
         text.contains('توقف النمو') ||
+        text.contains('ما بتكبر') ||
+        text.contains('ما عم تكبر') ||
+        text.contains('واقفة') ||
+        text.contains('ركود') ||
         text.contains('بطء النمو') ||
         text.contains('تقزم') ||
         text.contains('stunted') ||
-        text.contains('growth') ||
-        text.contains('size')) {
+        text.contains('same size') ||
+        text.contains('not growing') ||
+        text.contains('month')) {
       return (
+        categoryTitle: isAr
+            ? '⏳ تحليل مدة الإصابة: ثبات الحجم وركود النمو'
+            : '⏳ Duration Insight: Stunted Growth & Static Size',
         analysis: isAr
-            ? '🔍 تحليل الملاحظة: توقف نمو النبات وثبات حجمه يدل غالباً على ضعف المجموع الجذري، نقص عنصر الفوسفور، أو برودة/انضغاط التربة.'
-            : '🔍 Observation Analysis: Stunted growth often indicates root stress, Phosphorus deficiency, or compacted/cold soil.',
+            ? '🔍 تحليل الملاحظة: بقاء النبات أو الأعراض بنفس الحجم لمدة شهر (أو أكثر) يعكس حالة "إجهاد فسيولوجي مزمن وركود نمو" (Chronic Stagnation). هذا الثبات يعني أن المشكلة لم تعد سطحية، بل تدل على كسل المجموع الجذري وتوقف امتصاص الفوسفور والعناصر الكبرى نتيجة برودة أو انضغاط التربة، أو وجود أعفان ونيماتودا خفية تعطل صعود الغذاء للقمم النامية.'
+            : '🔍 Observation Analysis: Static lesion expansion or stagnant plant size for a month indicates chronic physiological stagnation. Feeder roots have stalled, blocking Phosphorus and micronutrient uptake due to soil compaction, cold root-zones, or hidden subclinical root rot/nematodes.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به:\n1. إجراء عزق (خربشة) سطحي خفيف للتربة حول الشتلة لتهوية الجذور وتصريف الرطوبة الراكدة.\n2. فحص أسفل الساق والتاج للتأكد من خلو الجذور من الاسوداد أو التدرنات.\n3. تقليم الأوراق السفلية القديمة الراكدة لتوجيه طاقة النبات لإنتاج براعم وأوراق جديدة نضرة.'
+            : '📋 Actionable Guidance:\n1. Perform gentle shallow hoeing around root flare to aerate compacted soil.\n2. Check root collar for browning or nematode galls.\n3. Prune stalled lower foliage to redirect energy to fresh vegetative flushes.',
         fertilizer: isAr
-            ? '🌱 السماد الموصى به: سماد عالي الفوسفور (NPK 10-52-10 أو MAP مونو أمونيوم فوسفات) بمعدل 2-3 كغم/دونم + سقاية هيوميك أسيد (Humic Acid) لتنشيط الجذور وتفكيك التربة.'
-            : '🌱 Recommended Fertilizer: High-Phosphorus fertilizer (NPK 10-52-10 or MAP) + Humic Acid root drench.',
+            ? '🌱 برنامج كسر السكون وإعادة التنشيط:\n• سقاية سماد عالي الفوسفور (NPK 10-52-10 أو MAP) بمعدل 2-3 كغم/دونم لتجديد الشعيرات الجذرية.\n• سقاية منشط جذري مركب من "هيوميك أسيد + مستخلص طحالب بحرية" (Seaweed Extract) لكسر طور الركود وتحفيز الهرمونات النباتية (الأوكسينات والسيتوكينينات).'
+            : '🌱 Dormancy-Break Program:\n• Drench High-Phosphorus fertilizer (NPK 10-52-10 or MAP) at 2-3 kg/dunam.\n• Apply Humic Acid + Seaweed Extract drench to stimulate lateral roots and endogenous auxins/cytokinins.',
         treatment: isAr
-            ? 'فحص جذور النبات للتأكد من خلوها من النيماتودا أو الأعفان، وتنظيم فترات الري وتجنب التغريق.'
-            : 'Inspect root system for nematodes/rot and regulate irrigation schedule.',
-      );
-    } else if (text.contains('اصفرار الأوراق السفلية') ||
-        text.contains('lower') ||
-        (text.contains('اصفرار') && text.contains('تحت'))) {
-      return (
-        analysis: isAr
-            ? '🔍 تحليل الملاحظة: اصفرار الأوراق القديمة والسفلية علامة كلاسيكية على نقص عنصر النيتروجين (الآزوت) أو إجهاد مائي ناتج عن زيادة الري.'
-            : '🔍 Observation Analysis: Yellowing of lower/older leaves is a classic sign of Nitrogen deficiency or overwatering stress.',
-        fertilizer: isAr
-            ? '🌱 السماد الموصى به: سماد نيتروجيني متوازن NPK 20-20-20 أو نترات الكالسيوم أو يوريا مخففة.'
-            : '🌱 Recommended Fertilizer: Balanced Nitrogen fertilizer NPK 20-20-20 or Calcium Nitrate.',
-        treatment: isAr
-            ? 'تقليل كميات مياه الري وتنظيمها، والتسميد على دفعات صغيرة منتظمة.'
-            : 'Reduce irrigation volume and apply fertilizer in frequent small doses.',
-      );
-    } else if (text.contains('عروق خضراء') ||
-        text.contains('veins') ||
-        text.contains('iron') ||
-        text.contains('حديد') ||
-        text.contains('قمم')) {
-      return (
-        analysis: isAr
-            ? '🔍 تحليل الملاحظة: اصفرار الأوراق الحديثة العلوية مع بقاء العروق خضراء يدل على نقص عنصر الحديد (Iron Chlorosis) بسبب قلوية التربة.'
-            : '🔍 Observation Analysis: Interveinal chlorosis on young upper leaves indicates Iron deficiency due to high soil pH.',
-        fertilizer: isAr
-            ? '🌱 السماد الموصى به: شيلات حديد (EDDHA Iron 6%) بمعدل 5-10 غرام لكل شجرة/شتلة مع مياه الري، أو رش ورقي بشيلات EDTA.'
-            : '🌱 Recommended Fertilizer: Chelated Iron (EDDHA Iron 6%) soil drench or EDTA Iron foliar spray.',
-        treatment: isAr
-            ? 'إضافة حمض الفوسفوريك أو الكبريت الزراعي لخفض قلوية التربة وتسهيل امتصاص العناصر.'
-            : 'Apply agricultural sulfur or phosphoric acid to lower root-zone soil pH.',
-      );
-    } else if (text.contains('احتراق') ||
-        text.contains('حواف') ||
-        text.contains('edge') ||
-        text.contains('scorch') ||
-        text.contains('burn')) {
-      return (
-        analysis: isAr
-            ? '🔍 تحليل الملاحظة: احتراق حواف الأوراق والتفافها يعكس نقص عنصر البوتاسيوم أو ارتفاع ملوحة مياه الري والتربة.'
-            : '🔍 Observation Analysis: Marginal leaf burn indicates Potassium deficiency or elevated soil/water salinity.',
-        fertilizer: isAr
-            ? '🌱 السماد الموصى به: سلفات البوتاسيوم (0-0-50) أو نترات البوتاسيوم، مع معالج ملوحة (كالسيوم سائل).'
-            : '🌱 Recommended Fertilizer: Potassium Sulfate (0-0-50) or Potassium Nitrate with liquid calcium flush.',
-        treatment: isAr
-            ? 'غسيل التربة برية غزيرة للتخلص من تراكم الأملاح حول الجذور.'
-            : 'Perform a heavy leaching irrigation to flush accumulated root-zone salts.',
-      );
-    } else if (text.contains('تساقط') ||
-        text.contains('أزهار') ||
-        text.contains('ثمار') ||
-        text.contains('flower') ||
-        text.contains('drop')) {
-      return (
-        analysis: isAr
-            ? '🔍 تحليل الملاحظة: تساقط الأزهار والعقد الصغير ينتج عن نقص عنصري الكالسيوم والبورون أو تذبذب درجات الحرارة والري أثناء التزهير.'
-            : '🔍 Observation Analysis: Blossom drop is triggered by Calcium-Boron deficiency or temperature/water fluctuations.',
-        fertilizer: isAr
-            ? '🌱 السماد الموصى به: رش سماد كالسيوم-بورون سائل (Cal-Bor) بمعدل 1.5 مل/لتر وقت التزهير والعقد.'
-            : '🌱 Recommended Fertilizer: Liquid Calcium-Boron (Cal-Bor) foliar spray at 1.5 ml/L during bloom.',
-        treatment: isAr
-            ? 'تجنب التعطيش أو التغريق في مرحلة التزهير، والامتناع عن رش المبيدات الحشرية أثناء نشاط النحل.'
-            : 'Avoid water stress during blooming and halt insecticide sprays during pollinator activity.',
-      );
-    } else if (text.contains('عفن') ||
-        text.contains('سواد') ||
-        text.contains('rot') ||
-        text.contains('black') ||
-        text.contains('ساق')) {
-      return (
-        analysis: isAr
-            ? '🔍 تحليل الملاحظة: سواد أسفل الساق وتعفن الجذور دليل على الإصابة بأعفان الجذور الفطرية بسبب فرط الرطوبة.'
-            : '🔍 Observation Analysis: Blackened collar and root rot indicate fungal pathogens from excess soil moisture.',
-        fertilizer: isAr
-            ? '🌱 السماد الموصى به: إيقاف التسميد مؤقتاً وسقاية منشط مناعة نباتية فوسفيت بوتاسيوم بعد العلاج.'
-            : '🌱 Recommended Fertilizer: Pause fertilizer; apply Potassium Phosphite immune booster post-recovery.',
-        treatment: isAr
-            ? 'تعطيش النبات فوراً وسقاية مبيد فطري جهازي متخصص للأعفان (مثل هيمكسازول أو ميتالاكسيل).'
-            : 'Withhold water immediately and drench with systemic root-rot fungicide (Hymexazol / Metalaxyl).',
+            ? 'إزالة الأوراق المسنة الراكدة وسقاية مبيد أعفان وقائي خفيف لتطهير محيط الجذور.'
+            : 'Remove stagnant older foliage and apply a preventative light root-zone drench.',
       );
     }
 
+    // 2. تفشي حديث ونشط (مثل: "بدأت من يومين"، "من أسبوع"، "سريعة الانتشار")
+    if (text.contains('يومين') ||
+        text.contains('أسبوع') ||
+        text.contains('اسبوع') ||
+        text.contains('أمس') ||
+        text.contains('امس') ||
+        text.contains('جديد') ||
+        text.contains('حديث') ||
+        text.contains('سريع') ||
+        text.contains('recent') ||
+        text.contains('yesterday') ||
+        text.contains('week') ||
+        text.contains('rapid') ||
+        text.contains('fast')) {
+      return (
+        categoryTitle: isAr
+            ? '⚡ تفشي حديث ونشط (إصابة في بدايتها)'
+            : '⚡ Acute & Early Onset Infection',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: ظهور الأعراض منذ أيام قليلة أو أسبوع مع ملاحظة الانتشار السريع يعني أن الممرض في قمة مرحلة التكاثر النشط وإطلاق الجراثيم المتحركة (Active Sporulation). التدخل في هذا التوقيت المبكر يحقق نسبة شفاء تتجاوز 90% ويمنع تحول البؤرة إلى وباء شامل.'
+            : '🔍 Observation Analysis: Onset within days or a week with rapid expansion indicates an active sporulation phase. Early systemic intervention during this window delivers over 90% recovery and halts field epidemics.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به:\n1. تطبيق الرش العلاجي بالمبيد المتخصص خلال أول 24 إلى 48 ساعة دون تأخير.\n2. الامتناع التام عن لمس النباتات أو تقليمها أثناء وجود الندى الصباحي منعاً لنقل الجراثيم السابحة للأشجار المجاورة.'
+            : '📋 Actionable Guidance:\n1. Apply targeted therapeutic spray within 24-48 hours.\n2. Do not handle or prune foliage while wet with dew to avoid dispersing waterborne spores.',
+        fertilizer: isAr
+            ? '🌱 دعم المناعة السريعة: رش فوسفيت البوتاسيوم (Potassium Phosphite) لتحفيز مركبات الفيتوالكسين الدفاعية في النبات، مع إيقاف الأسمدة النيتروجينية الحرة مؤقتاً لتجنب إضعاف جدر الخلايا.'
+            : '🌱 Rapid Immunity Boost: Foliar Potassium Phosphite to induce phytoalexin defenses; halt free nitrogen fertilizers to avoid tissue softening.',
+        treatment: isAr
+            ? 'الرش الموضعي الفوري لبؤرة الإصابة والمحيط المباشر لها بمبيد جهازي فعال.'
+            : 'Urgent spot-spray of the infection focus and adjacent canopy with systemic fungicide.',
+      );
+    }
+
+    // 3. إصابة مزمنة طويلة الأمد (مثل: "من زمان"، "شهور"، "طولت وما طابت")
+    if (text.contains('من زمان') ||
+        text.contains('شهور') ||
+        text.contains('قديمة') ||
+        text.contains('طولت') ||
+        text.contains('ما طابت') ||
+        text.contains('ما استجابت') ||
+        text.contains('فترة طويلة') ||
+        text.contains('chronic') ||
+        text.contains('long time') ||
+        text.contains('months') ||
+        text.contains('persisting')) {
+      return (
+        categoryTitle: isAr
+            ? '🛡️ إصابة مزمنة متكررة'
+            : '🛡️ Chronic Persistent Infection',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: استمرار المرض لفترة طويلة دون تحسن يشير غالباً إلى اكتساب الفطر مقاومة ضد المبيد المكرر (Fungicide Resistance)، أو وجود خلل بيئي مستمر مثل فرط الرطوبة الأرضية أو سوء الصرف الذي يحافظ على دورة حياة الممرض نشطة باستمرار.'
+            : '🔍 Observation Analysis: Persistence of symptoms over extended weeks or months suggests pathogen fungicide-resistance or persistent conducive conditions (high humidity, poor air drainage, or contaminated soil).',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به:\n1. التناوب وتغيير مجموعة المبيد الكيميائية (استخدام مبيد بآلية عمل ومجموعة FRAC مختلفة كلياً عن السابق).\n2. قطع الأفرع والأوراق المصابة القديمة والتخلص منها بالحرق خارج المزرعة.'
+            : '📋 Actionable Guidance:\n1. Rotate chemical classes (use a fungicide with a different FRAC mode of action).\n2. Prune heavily infested old growth and incinerate off-site.',
+        fertilizer: isAr
+            ? '🌱 ترميم وتقوية الأنسجة: رش سيليكات البوتاسيوم + سماد متوازن NPK 20-20-20 لإعادة بناء جدر الخلايا التالفة.'
+            : '🌱 Tissue Restoration: Foliar Potassium Silicate + balanced NPK 20-20-20 to rebuild damaged cell walls.',
+        treatment: isAr
+            ? 'تغيير مبيد الرش لمادة فعالة جديدة وتعقيم أدوات التقليم بمحلول الكلور أو الكحول.'
+            : 'Switch active ingredient and disinfect pruning tools with alcohol/bleach.',
+      );
+    }
+
+    // 4. فرط الري والرطوبة وسواد الساق والتعفن (Overwatering & Moisture Stress)
+    if (text.contains('ري كثير') ||
+        text.contains('تغريق') ||
+        text.contains('كل يوم') ||
+        text.contains('رطوبة') ||
+        text.contains('طين') ||
+        text.contains('سواد بالساق') ||
+        text.contains('سواد') ||
+        text.contains('تعفن') ||
+        text.contains('عفن') ||
+        text.contains('overwatering') ||
+        text.contains('waterlogged') ||
+        text.contains('moist') ||
+        text.contains('wet') ||
+        text.contains('rot') ||
+        text.contains('black')) {
+      return (
+        categoryTitle: isAr
+            ? '💧 إجهاد مائي واختناق الجذور'
+            : '💧 Waterlogging & Root Hypoxia',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: كثرة الري واستمرار رطوبة التربة يطرد الأكسجين من مسامات الجذور مما يسبب اختناقها (Root Hypoxia) وموت الشعيرات الماصة، ويهيئ بيئة مثالية لفطريات الأعفان (بيثيوم وفيتوفثورا وفطريات الساق).'
+            : '🔍 Observation Analysis: Excessive watering deprives roots of oxygen (hypoxia), killing root hairs and triggering destructive soil-borne water molds (Pythium and Phytophthora).',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به:\n1. إيقاف الري تماماً حتى يجف سطح التربة بعمق 3-5 سم.\n2. تحسين مصارف المياه وتجنب ملامسة مياه الري المباشرة لجذع النبات.'
+            : '📋 Actionable Guidance:\n1. Pause irrigation until top 3-5 cm of soil dries completely.\n2. Unclog drainage channels and prevent standing water around plant collars.',
+        fertilizer: isAr
+            ? '🌱 إيقاف الأسمدة الكيميائية فوراً لتفادي احتراق الجذور المختنقة، وإضافة منشط مناعة فوسفيت بوتاسيوم بعد جفاف التربة.'
+            : '🌱 Suspend chemical fertilizers immediately; drench with Potassium Phosphite once soil breathes.',
+        treatment: isAr
+            ? 'تعطيش فوري ثم سقاية مبيد فطري جهازي متخصص للأعفان (مثل ميتالاكسيل أو هيمكسازول).'
+            : 'Withhold water then drench with systemic root-rot fungicide (Metalaxyl or Hymexazol).',
+      );
+    }
+
+    // 5. العطش والجفاف (Drought / Under-watering)
+    if (text.contains('عطش') ||
+        text.contains('جفاف') ||
+        text.contains('يابسة') ||
+        text.contains('قلة الري') ||
+        text.contains('ناشفة') ||
+        text.contains('ذبول') ||
+        text.contains('drought') ||
+        text.contains('dry') ||
+        text.contains('thirsty') ||
+        text.contains('wilting')) {
+      return (
+        categoryTitle: isAr
+            ? '☀️ إجهاد جفاف ونقص مائي'
+            : '☀️ Drought & Moisture Deficit Stress',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: جفاف التربة الشديد يؤدي إلى فقدان ضغط الامتلاء وذبول الأوراق وتركيز الأملاح في العصارة النباتية، مما يسبب احتراق أطراف الأوراق وضعف مقاومة النبات للآفات.'
+            : '🔍 Observation Analysis: Extreme soil dryness causes loss of turgor pressure, leaf wilting, and sap salinity buildup, scorching leaf margins and lowering pest defense.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به:\n1. الري المعتدل المنتظم في الصباح الباكر وتجنب الري وقت الظهيرة الحارة.\n2. وضع ملش عضوي (قش أو نشارة) حول مسقط الشتلة لحفظ رطوبة التربة.'
+            : '📋 Actionable Guidance:\n1. Scheduled moderate watering in early mornings, avoiding peak midday heat.\n2. Apply organic mulch around base to conserve soil moisture.',
+        fertilizer: isAr
+            ? '🌱 رش أحماض أمينية مع بوتاسيوم ومغنيسيوم لتقليل فقد الماء بالنتح واستعادة النضارة.'
+            : '🌱 Foliar Amino Acids + Potassium and Magnesium to reduce transpiration and restore turgidity.',
+        treatment: isAr
+            ? 'تنظيم فترات الري عبر عداد ري أو قياس رطوبة التربة بانتظام.'
+            : 'Establish consistent irrigation intervals and monitor soil moisture.',
+      );
+    }
+
+    // 6. تساقط الأزهار والثمار (Blossom & Fruit Drop / Abortion)
+    if (text.contains('تساقط') ||
+        text.contains('أزهار') ||
+        text.contains('ازهار') ||
+        text.contains('ثمار') ||
+        text.contains('الزهر') ||
+        text.contains('تنفيل') ||
+        text.contains('بوقع') ||
+        text.contains('بتسقط') ||
+        text.contains('flower') ||
+        text.contains('blossom') ||
+        text.contains('fruit drop') ||
+        text.contains('abortion')) {
+      return (
+        categoryTitle: isAr
+            ? '🌸 إجهاد مرحلة التزهير والعقد (تنفيل الأزهار)'
+            : '🌸 Bloom & Fruit-Set Stress',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: تساقط الأزهار والعقد الصغير (التنفيل) ينتج غالباً عن تذبذب الري (عطش متبوع بري غزير)، أو نقص عنصري الكالسيوم والبورون المسؤولين عن قوة أنبوب اللقاح وتثبيت العقد.'
+            : '🔍 Observation Analysis: Blossom and fruitlet abortion (drop) is triggered by moisture swings or deficiencies in Calcium and Boron, which govern pollen tube vitality and pedicel retention.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به:\n1. تثبيت كميات ومواعيد الري تماماً أثناء التزهير دون أي تذبذب.\n2. الامتناع عن رش المبيدات الحشرية القوية وقت نشاط حشرات التلقيح (الصباح الباكر).'
+            : '📋 Actionable Guidance:\n1. Fix exact irrigation volume and schedule during bloom.\n2. Halt harsh chemical insecticides during pollinator foraging hours.',
+        fertilizer: isAr
+            ? '🌱 رش ورقي بمركب كالسيوم-بورون سائل (Cal-Bor) بمعدل 1.5-2 مل/لتر + سماد عالي الفوسفور لتثبيت العقد وزيادة نسبة الإخصاب.'
+            : '🌱 Foliar spray with Liquid Calcium-Boron (Cal-Bor) at 1.5-2 ml/L + High-P to secure fruit set.',
+        treatment: isAr
+            ? 'فحص الأزهار لضمان خلوها من حشرات التربس التي تثقب قواعد الأزهار وتسقطها.'
+            : 'Scout blossoms for thrips that pierce flower bases and trigger drop.',
+      );
+    }
+
+    // 7. اصفرار بين العروق ونقص الحديد
+    if (text.contains('عروق خضراء') ||
+        text.contains('حديد') ||
+        text.contains('قمم') ||
+        text.contains('veins') ||
+        text.contains('iron')) {
+      return (
+        categoryTitle: isAr
+            ? '🍃 نقص عنصر الحديد (اصفرار بين العروق)'
+            : '🍃 Interveinal Iron Chlorosis',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: اصفرار الأوراق الحديثة العلوية مع بقاء العروق خضراء يشير بوضوح لنقص عنصر الحديد المتاح للنبات بسبب قلوية التربة (High pH) أو زيادة الكلس.'
+            : '🔍 Observation Analysis: Interveinal chlorosis on top new leaves indicates Iron deficiency caused by alkaline soil pH tie-up.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به: إضافة كبريت زراعي أو حمض فوسفوريك مع ماء الري لتخفيض قلوية التربة وتيسير العناصر.'
+            : '📋 Actionable Guidance: Apply sulfur or phosphoric acid to lower rhizosphere pH and liberate micronutrients.',
+        fertilizer: isAr
+            ? '🌱 سقاية شيلات حديد (EDDHA Iron 6%) بمعدل 5-10 غرام للشتلة مع ماء الري، أو رش ورقي بشيلات EDTA.'
+            : '🌱 Soil drench with EDDHA Iron 6% at 5-10g per plant or foliar EDTA Iron.',
+        treatment: isAr
+            ? 'الري المنتظم وتجنب الإفراط في الفوسفور الذي يرسب الحديد في التربة.'
+            : 'Regulate watering and avoid excess phosphorus which binds iron.',
+      );
+    }
+
+    // 8. اصفرار الأوراق واصفرار الأوراق السفلية
+    if (text.contains('اصفرار') ||
+        text.contains('أوراق صفراء') ||
+        text.contains('صفار') ||
+        text.contains('شاحبة') ||
+        text.contains('yellow') ||
+        text.contains('chlorosis') ||
+        text.contains('pale')) {
+      return (
+        categoryTitle: isAr
+            ? '🍂 نقص نيتروجين وإجهاد أوراق سفلية'
+            : '🍂 Nitrogen Deficiency & Foliar Yellowing',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: اصفرار الأوراق السفلية والقديمة علامة كلاسيكية على نقص النيتروجين (الآزوت) حيث يسحب النبات العنصر من الأوراق القديمة ليغذي القمم النامية، أو نتيجة اختناق الجذور المؤقت.'
+            : '🔍 Observation Analysis: Yellowing of lower/older foliage is classic Nitrogen translocation or temporary root asphyxiation.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به: فحص رطوبة التربة وضبط التسميد على دفعات متوازنة لتجنب غسيل الآزوت.'
+            : '📋 Actionable Guidance: Verify soil moisture and split nitrogen feeds into balanced doses.',
+        fertilizer: isAr
+            ? '🌱 سماد نيتروجيني متوازن NPK 20-20-20 أو نترات الكالسيوم بمعدل معتدل لتجديد الاخضرار.'
+            : '🌱 Balanced NPK 20-20-20 or Calcium Nitrate at moderate rates.',
+        treatment: isAr
+            ? 'إزالة الأوراق الصفراء الميتة لتحسين التهوية والحد من الفطريات الرمية.'
+            : 'Remove dead yellow leaves to improve canopy aeration.',
+      );
+    }
+
+    // 9. احتراق الحواف والملوحة
+    if (text.contains('احتراق') ||
+        text.contains('حواف') ||
+        text.contains('يباس') ||
+        text.contains('أملاح') ||
+        text.contains('ملوحة') ||
+        text.contains('scorch') ||
+        text.contains('burn') ||
+        text.contains('edge') ||
+        text.contains('margin') ||
+        text.contains('salinity')) {
+      return (
+        categoryTitle: isAr
+            ? '🧂 إجهاد ملوحة واحتراق الحواف'
+            : '🧂 Marginal Scorch & Salinity Stress',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: احتراق حواف الأوراق والتفافها يعكس إجهاد ملوحة ناتجاً عن تراكم الأملاح في ماء الري أو نقص عنصر البوتاسيوم المسؤول عن تنظيم الضغط الأسموزي للخلايا.'
+            : '🔍 Observation Analysis: Marginal leaf burn indicates salt accumulation in leaf tips or acute Potassium deficiency impairing osmotic regulation.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به: غسيل التربة برية غزيرة للتخلص من تراكم الأملاح حول الجذور وفحص ملوحة مياه الري (EC).'
+            : '📋 Actionable Guidance: Perform leaching irrigation to flush salts away from root zone; test EC of irrigation water.',
+        fertilizer: isAr
+            ? '🌱 سلفات البوتاسيوم (0-0-50) أو نترات البوتاسيوم + معالج ملوحة سائل (نترات الكالسيوم مع أحماض كربوكسيلية).'
+            : '🌱 Potassium Sulfate (0-0-50) + liquid calcium salinity flusher.',
+        treatment: isAr
+            ? 'الامتناع عن إضافة أسمدة كلوريدية واستخدام أسمدة نقية منخفضة الملوحة.'
+            : 'Avoid chloride-based feeds and use low-salt index fertilizers.',
+      );
+    }
+
+    // 10. التفاف الأوراق والحشرات الماصة
+    if (text.contains('التفاف') ||
+        text.contains('تجعيد') ||
+        text.contains('كرمشة') ||
+        text.contains('من') ||
+        text.contains('ذبابة') ||
+        text.contains('تربس') ||
+        text.contains('دودة') ||
+        text.contains('حشرات') ||
+        text.contains('curling') ||
+        text.contains('wrinkled') ||
+        text.contains('pests') ||
+        text.contains('aphids') ||
+        text.contains('whitefly')) {
+      return (
+        categoryTitle: isAr
+            ? '🐛 إجهاد حشري والتفاف الأوراق'
+            : '🐛 Sucking Pests & Leaf Distortion',
+        analysis: isAr
+            ? '🔍 تحليل الملاحظة: تجعد والتفاف الأوراق يشير إلى امتصاص الحشرات الثاقبة الماصة (مثل المن والذبابة والتربس) للعصارة النباتية من السطح السفلي، أو انتقال فيروس نباتي.'
+            : '🔍 Observation Analysis: Leaf curling and puckering typically indicates sucking pests (aphids, thrips, whiteflies) drawing sap from leaf undersides, or viral transmission.',
+        guidance: isAr
+            ? '📋 التوجيه الفوري الموصى به: فحص السطح السفلي للأوراق بعدسة مكبرة، وتركيب مصائد لاصقة صفراء وزرقاء.'
+            : '📋 Actionable Guidance: Inspect leaf undersides with a hand lens and install yellow/blue sticky traps.',
+        fertilizer: isAr
+            ? '🌱 رش سيليكات البوتاسيوم لزيادة صلابة بشرة الأوراق وتقليل قدرة الحشرات على اختراقها.'
+            : '🌱 Foliar Potassium Silicate to harden epidermis against insect feeding.',
+        treatment: isAr
+            ? 'رش مبيد حشري جهازي متخصص (أسيتامبريد أو إيميداكلوبريد أو زيت نيم طبيعي).'
+            : 'Apply systemic insecticide (Acetamiprid, Imidacloprid, or neem oil).',
+      );
+    }
+
+    // 11. الرد الذكي الافتراضي لأي ملاحظة مخصصة أخرى
     return (
+      categoryTitle: isAr
+          ? '📝 تحليل فسيولوجي لملاحظة المزارع'
+          : '📝 Farmer Observation Contextual Analysis',
       analysis: isAr
-          ? '🔍 ملاحظة المزارع المرفقة: "${notes.trim()}" — تم أخذ هذه الملاحظة بالاعتبار ضمن خطة الرعاية.'
-          : '🔍 Farmer Observation: "${notes.trim()}" — incorporated into care guidelines.',
+          ? '🔍 تم ربط ملاحظتك: "${notes.trim()}" مع نتيجة الفحص البصري للذكاء الاصطناعي. تبيّن أن الأعراض المذكورة تعزز التشخيص المكتشف وتتطلب ضبط بيئة النمو والتغذية بالتوازي مع مكافحة المرض.'
+          : '🔍 Your observation: "${notes.trim()}" was integrated with the AI vision diagnosis. The reported field condition aligns with the diagnosed pathogen and requires synchronized environmental and nutritional care.',
+      guidance: isAr
+          ? '📋 التوجيه الفوري الموصى به:\n1. متابعة تطور الأعراض يومياً والتحقق من عدم انتشارها للنباتات المجاورة.\n2. ضبط التهوية وانتظام الري وتجنب ترطيب الأوراق أثناء التسميد أو الري.'
+          : '📋 Actionable Guidance:\n1. Monitor symptom progression daily across adjacent crop rows.\n2. Maintain canopy aeration, uniform irrigation, and avoid foliage wetting.',
       fertilizer: isAr
-          ? '🌱 السماد العام الموصى به: سماد NPK متوازن 20-20-20 بمعدل منتظم لدعم النمو الشامل.'
-          : '🌱 General Fertilizer: Balanced NPK 20-20-20 to support overall vegetative health.',
+          ? '🌱 سماد NPK متوازن 20-20-20 بمعدل منتظم لدعم حيوية المجموع الخضري والمناعة العامة.'
+          : '🌱 Balanced NPK 20-20-20 to support overall vigor and disease tolerance.',
       treatment: isAr
-          ? 'مراقبة تطور النبات والتأكد من ضبط معدلات الري والتهوية.'
-          : 'Monitor foliage and ensure optimal moisture and airflow.',
+          ? 'تنفيذ خطة العلاج الموصى بها بدقة مع الالتزام بفترة الأمان قبل الحصاد (PHI).'
+          : 'Execute the recommended treatment plan adhering strictly to Pre-Harvest Intervals (PHI).',
     );
   }
 
   // ======= خطوة 1: استخراج نوع المحصول من مفتاح الـ label =======
-  // الـ labels تتبع النمط: "CropName___Disease" أو "CropName___healthy"
+  // يدعم المحاصيل الزراعية الخمسة: Tomato, Potato, Olive, Wheat, Citrus
   String? _extractCropFromLabel(String rawLabel) {
-    final parts = rawLabel.split('___');
-    if (parts.isEmpty || parts[0].trim().isEmpty) return null;
-    return parts[0].trim(); // مثال: 'Tomato', 'Apple', 'Strawberry'
+    final lower = rawLabel.toLowerCase().trim();
+    if (lower.startsWith('tomato')) return 'Tomato';
+    if (lower.startsWith('potato')) return 'Potato';
+    if (lower.startsWith('olive')) return 'Olive';
+    if (lower.startsWith('wheat')) return 'Wheat';
+    if (lower.startsWith('citrus')) return 'Citrus';
+
+    // دعم التسميات المركبة أو أي فاصل آخر
+    final parts = rawLabel.split(RegExp(r'___|_'));
+    if (parts.isNotEmpty && parts[0].trim().isNotEmpty) {
+      final p = parts[0].trim().toLowerCase();
+      if (p == 'tomato') return 'Tomato';
+      if (p == 'potato') return 'Potato';
+      if (p == 'olive') return 'Olive';
+      if (p == 'wheat') return 'Wheat';
+      if (p == 'citrus') return 'Citrus';
+      return parts[0].trim();
+    }
+    return null;
   }
 
   Future<void> _classifyAndDiagnose() async {
@@ -1137,8 +1712,17 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         });
       }
 
-      // التحقق من أن المرض المكتشف ينتمي لنفس المحصول (منع خلط أمراض المحاصيل)
-      final bilingualInfo = kPlantDiseasesBilingual[diseaseRawKey];
+      // البحث في قاموس الأمراض ثنائي اللغة مع دعم المطابقة الدقيقة والمرنة
+      DiseaseDetail? bilingualInfo = kPlantDiseasesBilingual[diseaseRawKey];
+      if (bilingualInfo == null) {
+        final cleanKey = diseaseRawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        for (final entry in kPlantDiseasesBilingual.entries) {
+          if (entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '') == cleanKey) {
+            bilingualInfo = entry.value;
+            break;
+          }
+        }
+      }
       Map<String, dynamic> finalData = {};
 
       String diseaseAr = diseaseRawKey;
@@ -1178,14 +1762,18 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         diseaseEn = finalData['name']?.toString() ?? diseaseRawKey;
       }
 
+      String? customCategory;
       String? customAnalysis;
+      String? customGuidance;
       String? customFert;
       if (_notesController.text.trim().isNotEmpty) {
         final noteResult = _analyzeFarmerNotes(
           _notesController.text.trim(),
           isAr,
         );
+        customCategory = noteResult.categoryTitle;
         customAnalysis = noteResult.analysis;
+        customGuidance = noteResult.guidance;
         customFert = noteResult.fertilizer;
         if (noteResult.treatment.isNotEmpty &&
             finalData['treatments'] is List) {
@@ -1211,6 +1799,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             'disease_raw_key': diseaseRawKey,
             'confidence': maxVal,
             'notes': _notesController.text.trim(),
+            'note_category': customCategory,
+            'note_analysis': customAnalysis,
+            'note_guidance': customGuidance,
             'fertilizer': customFert ?? finalData['fertilizer'],
             'treatments': finalData['treatments'],
             // حفظ بيانات المستخدم الذي أجرى التشخيص (للتحكم في صلاحيات الحذف)
@@ -1237,7 +1828,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       setState(() {
         _confidence = maxVal;
         _diseaseResult = finalData;
+        _symptomCategoryTitle = customCategory;
         _symptomAnalysisNote = customAnalysis;
+        _symptomGuidance = customGuidance;
         _customFertilizerAdvice = customFert;
         _isClassifying = false;
         _statusMessage = null;
@@ -1254,17 +1847,32 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     }
   }
 
+  /// ==========================================================================
+  /// [Image Preprocessing Engine]
+  /// Converts a decoded image to a Float32 tensor ready for TFLite inference.
+  ///
+  /// Pipeline (must match training exactly):
+  ///   1. Resize to [width x height] — matches model input shape (224x224)
+  ///   2. Normalize pixel values: pixel / 255.0  →  range [0.0, 1.0]
+  ///      ⚠️ This matches `ImageDataGenerator(rescale=1./255)` used in training.
+  ///   3. Output shape: [1, height, width, 3]  (batch=1, H, W, RGB)
+  /// ==========================================================================
   Object _imageToFloat32Tensor(img.Image image, int width, int height) {
-    final resized = img.copyResize(image, width: width, height: height);
+    final resized = img.copyResize(
+      image,
+      width: width,
+      height: height,
+      interpolation: img.Interpolation.linear, // Bilinear — standard for CNNs
+    );
     final floats = Float32List(1 * height * width * 3);
     var i = 0;
     for (var y = 0; y < height; y++) {
       for (var x = 0; x < width; x++) {
         final pixel = resized.getPixel(x, y);
-        // التراجع للتطبيع الأصلي لأنه قد يكون النموذج تم تدريبه عليه (-1 to 1)
-        floats[i++] = (pixel.r.toDouble() - 127.5) / 127.5;
-        floats[i++] = (pixel.g.toDouble() - 127.5) / 127.5;
-        floats[i++] = (pixel.b.toDouble() - 127.5) / 127.5;
+        // Normalize to [0, 1] — matches training rescale=1./255
+        floats[i++] = pixel.r.toDouble() / 255.0;
+        floats[i++] = pixel.g.toDouble() / 255.0;
+        floats[i++] = pixel.b.toDouble() / 255.0;
       }
     }
     return floats.reshape([1, height, width, 3]);
@@ -1795,6 +2403,48 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     );
   }
 
+  Widget _buildQuickNoteChip(String label, String noteText) {
+    final isSelected = _notesController.text.trim() == noteText.trim();
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: () {
+        setState(() {
+          if (isSelected) {
+            _notesController.clear();
+          } else {
+            _notesController.text = noteText;
+          }
+        });
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? const Color(0xFF2E7D32) : Colors.grey.shade300,
+            width: isSelected ? 1.5 : 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 1),
+            ),
+          ],
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? const Color(0xFF1B5E20) : Colors.grey.shade800,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
@@ -1859,8 +2509,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                     String displayText = crop;
                     if (crop == 'Auto') {
                       displayText = isAr
-                          ? 'اختر نوع المحصول أولاً'
-                          : 'Select the crop type first.';
+                          ? 'الكل (كشف ذكي وتلقائي للمحصول)'
+                          : 'All (Auto-detect crop)';
                     } else if (isAr) {
                       displayText =
                           '${_cropTranslations[crop] ?? crop} ($crop)';
@@ -2005,7 +2655,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
               ),
               const SizedBox(height: 16),
 
-              // ملاحظة المزارع
+              // ملاحظة المزارع التفاعلية والذكية
               Card(
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(16),
@@ -2013,33 +2663,134 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                 elevation: 0,
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      SizedBox(
-                        width: 52,
-                        child: Text(
-                          isAr ? 'ملاحظة' : 'Note',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 18,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                isAr
+                                    ? 'ملاحظة حالة النبات (تحليل ذكي)'
+                                    : 'Plant State Note (AI Analysis)',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: TextField(
-                          controller: _notesController,
-                          maxLines: 1,
-                          decoration: InputDecoration(
-                            hintText: isAr
-                                ? 'اكتب ملاحظتك هنا...'
-                                : 'Write your note here...',
-                            hintStyle: TextStyle(
-                              fontSize: 12,
-                              color: Colors.grey.shade400,
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFE8F5E9),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              isAr
+                                  ? 'اختياري · لزيادة الدقة'
+                                  : 'Optional · Higher accuracy',
+                              style: const TextStyle(
+                                fontSize: 11,
+                                color: Color(0xFF2E7D32),
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
                           ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: _notesController,
+                        maxLines: 2,
+                        minLines: 1,
+                        decoration: InputDecoration(
+                          hintText: isAr
+                              ? 'مثال: "الها شهر نفس الحجم"، "بدأت منذ أسبوع"، "تساقط بالأزهار"...'
+                              : 'e.g. "Stunted size for a month", "Infection started a week ago"...',
+                          hintStyle: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade400,
+                          ),
+                          filled: true,
+                          fillColor: const Color(0xFFF9FBF9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide(color: Colors.grey.shade300),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: const BorderSide(
+                              color: Color(0xFF2E7D32),
+                              width: 1.5,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          suffixIcon: _notesController.text.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear, size: 18),
+                                  onPressed: () {
+                                    setState(() => _notesController.clear());
+                                  },
+                                )
+                              : null,
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: 10),
+                      // أزرار الاقتراحات السريعة التفاعلية
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildQuickNoteChip(
+                              isAr ? '⏳ الها شهر نفس الحجم' : '⏳ Same size for month',
+                              'الها شهر نفس الحجم',
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickNoteChip(
+                              isAr ? '⚡ بدأت منذ أسبوع' : '⚡ Started week ago',
+                              'بدأت الإصابة منذ أسبوع وسريعة الانتشار',
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickNoteChip(
+                              isAr ? '🍂 اصفرار من تحت' : '🍂 Lower yellowing',
+                              'اصفرار الأوراق السفلية القديمة',
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickNoteChip(
+                              isAr ? '💧 ري يومي والتربة رطبة' : '💧 Daily watering',
+                              'الري يومي والتربة رطبة باستمرار',
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickNoteChip(
+                              isAr ? '🌸 تساقط في الأزهار' : '🌸 Flower drop',
+                              'تساقط الأزهار والعقد الصغير',
+                            ),
+                            const SizedBox(width: 6),
+                            _buildQuickNoteChip(
+                              isAr ? '🔥 احتراق في الحواف' : '🔥 Edge burning',
+                              'احتراق والتفاف حواف الأوراق',
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -2242,19 +2993,126 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                         if (_symptomAnalysisNote != null) ...[
                           Container(
                             width: double.infinity,
-                            padding: const EdgeInsets.all(12),
+                            padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: Colors.blue.shade50,
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(color: Colors.blue.shade200),
-                            ),
-                            child: Text(
-                              _symptomAnalysisNote!,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.blue.shade900,
-                                height: 1.4,
+                              color: const Color(0xFFF0F7FF),
+                              borderRadius: BorderRadius.circular(14),
+                              border: Border.all(
+                                color: const Color(0xFF90CAF9),
+                                width: 1.2,
                               ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.blue.withValues(alpha: 0.06),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF1976D2),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Icon(
+                                        Icons.psychology_rounded,
+                                        color: Colors.white,
+                                        size: 18,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Text(
+                                        isAr
+                                            ? 'تحليل ذكي لملاحظة المزارع'
+                                            : 'AI Agronomist Note Insight',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Color(0xFF0D47A1),
+                                        ),
+                                      ),
+                                    ),
+                                    if (_symptomCategoryTitle != null)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 3,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFFE3F2FD),
+                                          borderRadius: BorderRadius.circular(8),
+                                          border: Border.all(
+                                            color: const Color(0xFF90CAF9),
+                                          ),
+                                        ),
+                                        child: Text(
+                                          _symptomCategoryTitle!,
+                                          style: const TextStyle(
+                                            fontSize: 11,
+                                            fontWeight: FontWeight.w600,
+                                            color: Color(0xFF1565C0),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
+                                ),
+                                const Divider(
+                                  height: 18,
+                                  color: Color(0xFFBBDEFB),
+                                ),
+                                Text(
+                                  _symptomAnalysisNote!,
+                                  style: const TextStyle(
+                                    fontSize: 13,
+                                    color: Color(0xFF1A237E),
+                                    height: 1.45,
+                                  ),
+                                ),
+                                if (_symptomGuidance != null &&
+                                    _symptomGuidance!.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(10),
+                                      border: Border.all(
+                                        color: const Color(0xFFBBDEFB),
+                                      ),
+                                    ),
+                                    child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          '💡',
+                                          style: TextStyle(fontSize: 14),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Expanded(
+                                          child: Text(
+                                            _symptomGuidance!,
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.blueGrey.shade800,
+                                              height: 1.4,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ],
                             ),
                           ),
                           const SizedBox(height: 16),

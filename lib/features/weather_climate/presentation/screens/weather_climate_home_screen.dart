@@ -1,13 +1,11 @@
-import 'dart:developer' as developer;
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:terralogic/core/farm_session_service.dart';
 import 'package:terralogic/core/notification_service.dart';
 import 'package:terralogic/core/terra_theme.dart';
 import 'package:terralogic/features/weather_climate/data/weather_service.dart';
 import 'package:terralogic/features/weather_climate/data/market_service.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 class WeatherClimateHomeScreen extends StatefulWidget {
   final bool isArabic;
@@ -531,8 +529,10 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                     )
                   else
                     ..._marketNews.map((news) {
+                      final title = news['title']?.trim() ?? '';
+                      final source = news['source']?.trim() ?? '';
                       return Card(
-                        elevation: 1,
+                        elevation: 0,
                         shadowColor: TerraTheme.ink.withValues(alpha: 0.05),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
@@ -541,34 +541,53 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(14),
-                          onTap: () =>
-                              _openMarketStory(news['link'] ?? '', isAr),
-                          child: ListTile(
-                            leading: Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: const Icon(
-                                Icons.newspaper_rounded,
-                                color: Color(0xFF2E7D32),
-                                size: 20,
-                              ),
-                            ),
-                            title: Text(
-                              news['title'] ?? '',
-                              style: const TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            trailing: const Icon(
-                              Icons.open_in_new_rounded,
-                              size: 18,
-                              color: Color(0xFF2E7D32),
+                          onLongPress: () => _copyNews(
+                            title: title,
+                            source: source,
+                            isAr: isAr,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _formatNewsDate(news['published_at'], isAr),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade500,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                const SizedBox(height: 7),
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFE8F5E9),
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: const Icon(
+                                        Icons.newspaper_rounded,
+                                        color: Color(0xFF2E7D32),
+                                        size: 20,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: Text(
+                                        title,
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          height: 1.45,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -601,40 +620,29 @@ class _WeatherClimateHomeScreenState extends State<WeatherClimateHomeScreen> {
     );
   }
 
-  Future<void> _openMarketStory(String rawLink, bool isAr) async {
-    final value = rawLink.trim();
-    final link = Uri.tryParse(value);
-    final isWebLink =
-        link != null && (link.scheme == 'http' || link.scheme == 'https');
-    if (isWebLink) {
-      try {
-        // لا نعتمد على canLaunchUrl هنا؛ ففي Android قد يعيد false بسبب
-        // قيود package visibility رغم أن المتصفح يستطيع فتح الرابط.
-        final opened = await launchUrl(
-          link,
-          mode: LaunchMode.externalApplication,
-        );
-        if (opened) return;
-      } catch (error, stackTrace) {
-        developer.log(
-          'Failed to open market news link',
-          name: 'WeatherClimateHomeScreen',
-          error: error,
-          stackTrace: stackTrace,
-        );
-      }
-    }
+  String _formatNewsDate(String? rawDate, bool isAr) {
+    final date = rawDate == null ? null : DateTime.tryParse(rawDate);
+    if (date == null) return isAr ? 'تاريخ غير متوفر' : 'Date unavailable';
+    final local = date.toLocal();
+    return '${local.day.toString().padLeft(2, '0')}/'
+        '${local.month.toString().padLeft(2, '0')}/${local.year} • '
+        '${local.hour.toString().padLeft(2, '0')}:'
+        '${local.minute.toString().padLeft(2, '0')}';
+  }
+
+  Future<void> _copyNews({
+    required String title,
+    required String source,
+    required bool isAr,
+  }) async {
+    final text = '$title\n${isAr ? 'المصدر' : 'Source'}: $source';
+    await Clipboard.setData(ClipboardData(text: text));
     if (!mounted) return;
     ScaffoldMessenger.of(context).hideCurrentSnackBar();
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
-          isAr ? 'تعذر فتح رابط الخبر' : 'Could not open the news link',
-        ),
-        action: SnackBarAction(
-          label: isAr ? 'إغلاق' : 'Dismiss',
-          onPressed: () {},
-        ),
+        content: Text(isAr ? 'تم نسخ الخبر والمصدر' : 'News and source copied'),
+        duration: const Duration(seconds: 2),
       ),
     );
   }

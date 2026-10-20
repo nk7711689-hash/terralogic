@@ -24,8 +24,18 @@ class MarketService {
 
         for (var item in items.take(7)) {
           // جلب أول 7 أخبار فقط
+          final rawTitle = item.querySelector('title')?.text.trim() ?? 'خبر زراعي';
+          final separator = rawTitle.lastIndexOf(' - ');
+          final title = separator > 0
+              ? rawTitle.substring(0, separator).trim()
+              : rawTitle;
+          final source = separator > 0
+              ? rawTitle.substring(separator + 3).trim()
+              : 'Google News';
           newsList.add({
-            'title': item.querySelector('title')?.text ?? 'خبر زراعي',
+            'title': title,
+            'source': source,
+            'published_at': item.querySelector('pubDate')?.text.trim() ?? '',
             'link': item.querySelector('link')?.text.trim() ?? '',
           });
         }

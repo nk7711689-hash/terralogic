@@ -9,7 +9,6 @@ import 'features/home/presentation/screens/home_dashboard_screen.dart';
 import 'features/management/presentation/screens/data_management_screen.dart';
 import 'features/weather_climate/presentation/screens/weather_climate_home_screen.dart';
 import 'package:terralogic/features/analytics_finance/presentation/screens/analytics_finance_screen.dart';
-import 'package:terralogic/features/ai_plant_doctor/presentation/screens/plant_doctor_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -75,14 +74,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ? AnalyticsFinanceScreen(isArabic: isArabic)
               : _buildRestrictedFinanceView(isArabic),
           WeatherClimateHomeScreen(isArabic: isArabic),
-          PlantDoctorScreen(isArabic: isArabic),
         ];
 
         return Directionality(
           textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: Scaffold(
             // لا يوجد AppBar هنا حتى لا يتكرر الشريط العلوي مع الشاشات الداخلية
-            body: screens[_currentIndex],
+            body: screens[_currentIndex.clamp(0, screens.length - 1)],
             bottomNavigationBar: Container(
               decoration: const BoxDecoration(
                 color: TerraTheme.paper,
@@ -116,12 +114,6 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                         3,
                         Icons.wb_sunny_rounded,
                         isArabic ? 'الطقس' : 'Weather',
-                        isArabic,
-                      ),
-                      _buildNavItem(
-                        4,
-                        Icons.spa_rounded,
-                        isArabic ? 'طبيب النبات' : 'Plant Doctor',
                         isArabic,
                       ),
                     ],

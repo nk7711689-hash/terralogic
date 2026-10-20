@@ -1,0 +1,14 @@
+citrus_Sooty Mould
+citrus_citrus_canker
+citrus_healthy
+olive_healthy
+olive_peacock_spot
+potato_Early_Blight
+potato_Late_blight
+potato_healthy
+tomato_early_blight
+tomato_healthy
+tomato_late_blight
+wheat_Brown_Rust
+wheat_healthy
+wheat_yellow_rust

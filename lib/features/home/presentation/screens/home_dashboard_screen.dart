@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:terralogic/core/farm_session_service.dart';
 import 'package:terralogic/core/notification_service.dart';
 import 'package:terralogic/core/terra_theme.dart';
+import 'package:terralogic/features/ai_plant_doctor/presentation/screens/plant_doctor_screen.dart';
 import 'package:terralogic/features/management/presentation/screens/notifications_screen.dart';
 import 'package:terralogic/shared/widgets/terra_drawer.dart';
 
@@ -293,10 +294,18 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       children: [
         Expanded(
           child: _buildCountCard(
-            isAr ? 'المستشعرات' : 'Sensors',
-            Icons.sensors_rounded,
-            Colors.blueGrey,
-            'devices',
+            isAr ? 'طبيب النبات' : 'Plant Doctor',
+            Icons.spa_rounded,
+            const Color(0xFF2E7D32),
+            'diagnosis_history',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => PlantDoctorScreen(isArabic: isAr),
+                ),
+              );
+            },
           ),
         ),
         const SizedBox(width: 8),
@@ -306,6 +315,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             Icons.groups_rounded,
             TerraTheme.blue,
             'workers',
+            onTap: () => widget.onNavigateTab(1),
           ),
         ),
         const SizedBox(width: 8),
@@ -315,6 +325,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             Icons.eco_rounded,
             TerraTheme.forest,
             'crops',
+            onTap: () => widget.onNavigateTab(1),
           ),
         ),
       ],
@@ -325,8 +336,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     String label,
     IconData icon,
     Color color,
-    String collection,
-  ) {
+    String collection, {
+    VoidCallback? onTap,
+  }) {
     final stream = _farmCode.isEmpty
         ? FirebaseFirestore.instance.collection(collection).limit(0).snapshots()
         : FirebaseFirestore.instance
@@ -336,16 +348,22 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     return StreamBuilder<QuerySnapshot>(
       stream: stream,
       builder: (context, snapshot) {
-        return Container(
+        final cardContent = Container(
           height: 104,
           padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
           decoration: BoxDecoration(
             color: TerraTheme.paper,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: TerraTheme.line),
+            border: Border.all(
+              color: onTap != null
+                  ? color.withValues(alpha: 0.35)
+                  : TerraTheme.line,
+              width: onTap != null ? 1.4 : 1.0,
+            ),
             boxShadow: [
               BoxShadow(
-                color: TerraTheme.ink.withValues(alpha: .04),
+                color: (onTap != null ? color : TerraTheme.ink)
+                    .withValues(alpha: .05),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
@@ -369,9 +387,25 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(color: Colors.grey.shade600, fontSize: 10),
+                style: TextStyle(
+                  color: onTap != null ? color : Colors.grey.shade600,
+                  fontSize: 10,
+                  fontWeight:
+                      onTap != null ? FontWeight.bold : FontWeight.normal,
+                ),
               ),
             ],
+          ),
+        );
+
+        if (onTap == null) return cardContent;
+
+        return Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: onTap,
+            child: cardContent,
           ),
         );
       },
