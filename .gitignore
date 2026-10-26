@@ -1,4 +1,5 @@
 *.hprof
 *.tflite
+!assets/plant_disease_model.tflite
 build/
 .dart_tool/

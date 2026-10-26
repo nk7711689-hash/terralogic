@@ -35,8 +35,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.jpg
-    - assets/model.tflite
-    - assets/labels.json
+    - assets/plant_disease_model.tflite
+    - assets/labels.txt
 
 flutter_launcher_icons:
   android: true

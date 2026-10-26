@@ -1,6 +1,5 @@
-import 'dart:convert';
+import 'dart:async';
 import 'dart:io';
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -402,6 +401,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Potassium fertilizer to boost fruit immunity + Calcium to enhance peel firmness.',
   ),
+
   'Apple___Black_rot': DiseaseDetail(
     nameAr: 'العفن الأسود في التفاح',
     nameEn: 'Apple Black Rot',
@@ -423,6 +423,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Balanced NPK 20-20-20 fertilization to support vigorous vegetative growth.',
   ),
+
   'Apple___Cedar_apple_rust': DiseaseDetail(
     nameAr: 'صدأ أرز التفاح',
     nameEn: 'Cedar Apple Rust',
@@ -445,6 +446,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Micronutrients (Zinc, Iron, Magnesium) to compensate for photosynthetic stress.',
   ),
+
   'Apple___healthy': DiseaseDetail(
     nameAr: 'أوراق تفاح سليمة',
     nameEn: 'Healthy Apple Leaves',
@@ -459,6 +461,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'سماد NPK متوازن + عناصر صغرى دورية.',
     fertilizerEn: 'Balanced NPK fertilizer + periodic trace elements.',
   ),
+
   'Blueberry___healthy': DiseaseDetail(
     nameAr: 'نبات توت أزرق سليم',
     nameEn: 'Healthy Blueberry',
@@ -472,6 +475,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'سلفات الأمونيوم وسماد عضوي حامضي.',
     fertilizerEn: 'Ammonium sulfate and acidic organic fertilizer.',
   ),
+
   'Cherry_(including_sour)___Powdery_mildew': DiseaseDetail(
     nameAr: 'البياض الدقيقي في الكرز',
     nameEn: 'Cherry Powdery Mildew',
@@ -494,6 +498,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Avoid excessive nitrogen; apply Potassium Silicate for cuticle strengthening.',
   ),
+
   'Cherry_(including_sour)___healthy': DiseaseDetail(
     nameAr: 'أوراق كرز سليمة',
     nameEn: 'Healthy Cherry',
@@ -508,6 +513,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'تسميد عضوي شتوي وNPK متوازن.',
     fertilizerEn: 'Winter organic manure and balanced NPK fertilizer.',
   ),
+
   'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot': DiseaseDetail(
     nameAr: 'تبقع أوراق الذرة الرمادي (سيركوسبورا)',
     nameEn: 'Corn Gray Leaf Spot (Cercospora)',
@@ -530,6 +536,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Potassium fertilization to strengthen stalks and prevent lodging.',
   ),
+
   'Corn_(maize)___Common_rust_': DiseaseDetail(
     nameAr: 'الصدأ الشائع في الذرة',
     nameEn: 'Corn Common Rust',
@@ -550,6 +557,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'سماد متوازن وتجنب الإفراط في اليوريا عند اشتداد الرطوبة.',
     fertilizerEn: 'Balanced fertilizer; avoid excess urea in high humidity.',
   ),
+
   'Corn_(maize)___Northern_Leaf_Blight': DiseaseDetail(
     nameAr: 'لفحة أوراق الذرة الشمالية',
     nameEn: 'Northern Corn Leaf Blight',
@@ -569,6 +577,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'تسميد فوسفوري وبوتاسي متوازن.',
     fertilizerEn: 'Balanced phosphorus and potassium fertilization.',
   ),
+
   'Corn_(maize)___healthy': DiseaseDetail(
     nameAr: 'نبات ذرة سليم',
     nameEn: 'Healthy Corn (Maize)',
@@ -585,6 +594,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Sequential nitrogen side-dressings (Urea or Ammonium Nitrate).',
   ),
+
   'Grape___Black_rot': DiseaseDetail(
     nameAr: 'العفن الأسود في العنب',
     nameEn: 'Grape Black Rot',
@@ -606,6 +616,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Calcium and Boron to reinforce berry skins and prevent cracking.',
   ),
+
   'Grape___Esca_(Black_Measles)': DiseaseDetail(
     nameAr: 'مرض إسكا (الحصبة السوداء) في العنب',
     cropAr: 'عنب',
@@ -627,6 +638,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Humic acid and root biostimulants to alleviate vascular stress.',
   ),
+
   'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)': DiseaseDetail(
     nameAr: 'لفحة أوراق العنب (إيزاريوبسيس)',
     nameEn: 'Grape Leaf Blight (Isariopsis)',
@@ -647,6 +659,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'سلفات البوتاسيوم لتحسين صلابة ومناعة الأوراق.',
     fertilizerEn: 'Potassium sulfate to improve leaf tissue resilience.',
   ),
+
   'Grape___healthy': DiseaseDetail(
     nameAr: 'أوراق عنب سليمة',
     nameEn: 'Healthy Grapevine',
@@ -662,6 +675,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Comprehensive nutrition plan (Nitrogen in spring, Potassium during berry sizing).',
   ),
+
   'Orange___Haunglongbing_(Citrus_greening)': DiseaseDetail(
     nameAr: 'اخضرار الحمضيات (التدهور السريع)',
     nameEn: 'Citrus Greening (Huanglongbing)',
@@ -684,6 +698,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Foliar micronutrient sprays (Zinc, Manganese, Iron, Boron) to alleviate decline.',
   ),
+
   'Peach___Bacterial_spot': DiseaseDetail(
     nameAr: 'التبقع البكتيري في الخوخ',
     nameEn: 'Peach Bacterial Spot',
@@ -706,6 +721,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Moderate fertilization; avoid excessive nitrogen that softens tissue.',
   ),
+
   'Peach___healthy': DiseaseDetail(
     nameAr: 'شجرة خوخ سليمة',
     nameEn: 'Healthy Peach',
@@ -718,6 +734,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'تسميد NPK متوازن + كالسيوم لصلابة الثمار وجودة التخزين.',
     fertilizerEn: 'Balanced NPK + Calcium for fruit firmness and shelf life.',
   ),
+
   'Pepper,_bell___Bacterial_spot': DiseaseDetail(
     nameAr: 'التبقع البكتيري في الفلفل الحلو',
     nameEn: 'Bell Pepper Bacterial Spot',
@@ -739,6 +756,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Calcium-Boron foliar application to reinforce cellular walls.',
   ),
+
   'Pepper,_bell___healthy': DiseaseDetail(
     nameAr: 'نبات فلفل سليم',
     nameEn: 'Healthy Bell Pepper',
@@ -755,6 +773,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Balanced NPK 20-20-20 and periodic Calcium feeds every 10 days.',
   ),
+
   'Potato___Early_blight': DiseaseDetail(
     nameAr: 'اللفحة المبكرة في البطاطا',
     nameEn: 'Potato Early Blight',
@@ -776,6 +795,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'High-potassium fertilizer to enhance tuber bulking and foliage endurance.',
   ),
+
   'Potato___Late_blight': DiseaseDetail(
     nameAr: 'اللفحة المتأخرة في البطاطا',
     nameEn: 'Potato Late Blight',
@@ -797,6 +817,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Potassium Phosphite to activate systemic acquired resistance (SAR).',
   ),
+
   'Potato___healthy': DiseaseDetail(
     nameAr: 'نبات بطاطا سليم',
     nameEn: 'Healthy Potato',
@@ -814,6 +835,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'High phosphorus for root establishment, transitioning to high potassium for tuber sizing.',
   ),
+
   'Raspberry___healthy': DiseaseDetail(
     nameAr: 'توت العليق سليم',
     nameEn: 'Healthy Raspberry',
@@ -829,6 +851,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'سماد عضوي وNPK متوازن.',
     fertilizerEn: 'Organic compost and balanced NPK fertilizer.',
   ),
+
   'Soybean___healthy': DiseaseDetail(
     nameAr: 'فول الصويا سليم',
     nameEn: 'Healthy Soybean',
@@ -844,6 +867,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Phosphorus and potassium fertilization (nodules fix biological nitrogen).',
   ),
+
   'Squash___Powdery_mildew': DiseaseDetail(
     nameAr: 'البياض الدقيقي في الكوسا والقرع',
     nameEn: 'Squash Powdery Mildew',
@@ -866,6 +890,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Potassium Silicate to thicken epidermis and deter fungal penetration.',
   ),
+
   'Strawberry___Leaf_scorch': DiseaseDetail(
     nameAr: 'حرق أوراق الفراولة',
     nameEn: 'Strawberry Leaf Scorch',
@@ -888,6 +913,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Calcium and Magnesium to regenerate leaf area and root crowns.',
   ),
+
   'Strawberry___healthy': DiseaseDetail(
     nameAr: 'نبات فراولة سليم',
     nameEn: 'Healthy Strawberry',
@@ -904,6 +930,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Balanced NPK + Boron to boost fruit set, sweetness, and uniform shape.',
   ),
+
   'Tomato___Bacterial_spot': DiseaseDetail(
     nameAr: 'التبقع البكتيري في الطماطم (البندورة)',
     nameEn: 'Tomato Bacterial Spot',
@@ -925,6 +952,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Potassium application for cell wall strength; avoid excessive urea.',
   ),
+
   'Tomato___Early_blight': DiseaseDetail(
     nameAr: 'اللفحة المبكرة في الطماطم (البندورة)',
     nameEn: 'Tomato Early Blight',
@@ -947,6 +975,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'High potassium NPK 12-12-36 for plant vigor and fruit sizing.',
   ),
+
   'Tomato___Late_blight': DiseaseDetail(
     nameAr: 'اللفحة المتأخرة في الطماطم (البندورة)',
     nameEn: 'Tomato Late Blight',
@@ -969,6 +998,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Potassium Phosphite to stimulate natural immune defense mechanisms.',
   ),
+
   'Tomato___Leaf_Mold': DiseaseDetail(
     nameAr: 'عفن الأوراق في الطماطم (البندورة)',
     nameEn: 'Tomato Leaf Mold',
@@ -990,6 +1020,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Calcium and Magnesium feeds to boost leaf thickness and photosynthesis.',
   ),
+
   'Tomato___Septoria_leaf_spot': DiseaseDetail(
     nameAr: 'تبقع أوراق سبتوريا في الطماطم',
     nameEn: 'Tomato Septoria Leaf Spot',
@@ -1011,6 +1042,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Balanced nutrition, avoiding overwatering and ensuring plant spacing.',
   ),
+
   'Tomato___Spider_mites Two-spotted_spider_mite': DiseaseDetail(
     nameAr: 'العناكب الحمراء (حلم الغبار) في الطماطم',
     nameEn: 'Two-Spotted Spider Mite on Tomato',
@@ -1032,6 +1064,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Foliar Magnesium and Iron to restore damaged chlorophyll pigments.',
   ),
+
   'Tomato___Target_Spot': DiseaseDetail(
     nameAr: 'التبقع المستهدف (تارجت سبوت) في الطماطم',
     nameEn: 'Tomato Target Spot',
@@ -1052,6 +1085,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'سماد متوازن NPK مع كالسيوم بورون.',
     fertilizerEn: 'Balanced NPK with Calcium-Boron supplement.',
   ),
+
   'Tomato___Tomato_Yellow_Leaf_Curl_Virus': DiseaseDetail(
     nameAr: 'فيروس تجعد واصفرار أوراق الطماطم (TYLCV)',
     nameEn: 'Tomato Yellow Leaf Curl Virus (TYLCV)',
@@ -1074,6 +1108,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerEn:
         'Amino acids + zinc and micronutrients to alleviate viral stress.',
   ),
+
   'Tomato___Tomato_mosaic_virus': DiseaseDetail(
     nameAr: 'فيروس موزايك الطماطم (TMV)',
     nameEn: 'Tomato Mosaic Virus (TMV)',
@@ -1094,6 +1129,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
     fertilizerAr: 'منشطات حيوية وهيوميك أسيد لدعم كفاءة المجموع الجذري.',
     fertilizerEn: 'Biostimulants and Humic Acid to support root vigor.',
   ),
+
   'Tomato___healthy': DiseaseDetail(
     nameAr: 'نبات طماطم (بندورة) سليم',
     nameEn: 'Healthy Tomato Plant',
@@ -1124,7 +1160,6 @@ class PlantDoctorScreen extends StatefulWidget {
 class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
-  final PlantDiseaseService _diseaseService = PlantDiseaseService();
   final TextEditingController _notesController = TextEditingController();
 
   Interpreter? _interpreter;
@@ -1140,7 +1175,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   String? _customFertilizerAdvice;
 
   // معايير ضبط جودة ودقة التشخيص والحد الأدنى للثقة
-  static const double kConfidenceThreshold = 0.65; // الحد الأدنى المعتمد للثقة (65%)
+  static const double kConfidenceThreshold =
+      0.65; // الحد الأدنى المعتمد للثقة (65%)
   bool _isLowConfidenceRejected = false;
   double? _rejectedConfidence;
   String? _rejectedCropAttempt;
@@ -1181,25 +1217,46 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
 
   Future<void> _loadModelAndLabels() async {
     try {
-      _interpreter = await Interpreter.fromAsset('assets/model.tflite');
+      _interpreter = await Interpreter.fromAsset(
+        'assets/plant_disease_model.tflite',
+      );
 
       final inputTensor = _interpreter!.getInputTensor(0);
       final outputTensor = _interpreter!.getOutputTensor(0);
       _inputShape = List<int>.from(inputTensor.shape);
-      final outShape = outputTensor.shape;
-      _numClasses = outShape.isNotEmpty ? outShape.last : 14;
+      _numClasses = outputTensor.shape.last;
+      if (inputTensor.type != TensorType.float32 ||
+          _inputShape.join(',') != '1,224,224,3' ||
+          outputTensor.type != TensorType.float32 ||
+          outputTensor.shape.join(',') != '1,14') {
+        throw StateError(
+          'Unexpected model tensors: input ${inputTensor.shape} '
+          '(${inputTensor.type}), output ${outputTensor.shape} '
+          '(${outputTensor.type})',
+        );
+      }
 
-      final String response = await rootBundle.loadString('assets/labels.json');
-      final data = json.decode(response);
-      final loaded = List<String>.from(data);
+      final response = await rootBundle.loadString('assets/labels.txt');
+      final loaded = response
+          .split(RegExp(r'\r?\n'))
+          .map((label) => label.trim())
+          .where((label) => label.isNotEmpty && !label.startsWith('#'))
+          .toList();
+      if (loaded.length != _numClasses) {
+        throw StateError(
+          'Expected $_numClasses labels, found ${loaded.length}',
+        );
+      }
 
       if (!mounted) return;
       setState(() {
         _labels = loaded;
-        _numClasses = loaded.isNotEmpty ? loaded.length : _numClasses;
         _statusMessage = null;
       });
     } catch (e) {
+      _interpreter?.close();
+      _interpreter = null;
+      _labels = [];
       if (!mounted) return;
       setState(() {
         _statusMessage = widget.isArabic
@@ -1237,10 +1294,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     String guidance,
     String fertilizer,
     String treatment,
-  }) _analyzeFarmerNotes(
-    String notes,
-    bool isAr,
-  ) {
+  })
+  _analyzeFarmerNotes(String notes, bool isAr) {
     String text = notes.toLowerCase();
 
     // 1. مدة الإصابة وثبات الحجم / توقف النمو (مثل: "الها شهر نفس الحجم"، "توقف النمو"، "ما بتكبر")
@@ -1606,9 +1661,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     if (_interpreter == null) {
       if (!mounted) return;
       setState(
-        () => _statusMessage = isAr
-            ? 'النموذج غير جاهز بعد.'
-            : 'Model not ready yet.',
+        () => _statusMessage ??= isAr
+            ? '???? ????? ???????. ???? ?? ????? ??????? ???????.'
+            : 'Model could not be loaded. Check the model and labels assets.',
       );
       return;
     }
@@ -1655,52 +1710,34 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         (output[0] as List).map((e) => (e as num).toDouble()),
       );
 
-      // Step 1: identify the crop by aggregating class scores per crop.
-      final cropScores = <String, double>{};
-      final cropIndices = <String, List<int>>{};
-      for (int i = 0; i < result.length && i < _labels.length; i++) {
+      if (result.length != _labels.length || result.length != _numClasses) {
+        throw StateError(
+          'Model returned ${result.length} scores for ${_labels.length} labels',
+        );
+      }
+
+      // Pick the highest-scoring class, optionally limited to the selected crop.
+      final candidateIndices = <int>[];
+      for (int i = 0; i < result.length; i++) {
         final crop = _extractCropFromLabel(_labels[i]);
-        if (crop == null ||
-            (_selectedCropType != 'Auto' &&
-                crop.toLowerCase() != _selectedCropType.toLowerCase())) {
-          continue;
+        if (crop != null &&
+            (_selectedCropType == 'Auto' ||
+                crop.toLowerCase() == _selectedCropType.toLowerCase())) {
+          candidateIndices.add(i);
         }
-        final score = result[i] < 0 ? 0.0 : result[i];
-        cropScores[crop] = (cropScores[crop] ?? 0) + score;
-        cropIndices.putIfAbsent(crop, () => []).add(i);
+      }
+      if (candidateIndices.isEmpty) {
+        throw StateError('No model labels match the selected crop');
       }
 
-      if (cropScores.isEmpty) {
-        throw Exception('نوع المحصول غير معروف');
-      }
-
-      final detectedCrop = cropScores.entries
-          .reduce((best, entry) => entry.value > best.value ? entry : best)
-          .key;
-      final totalCropScore = cropScores.values.fold(
-        0.0,
-        (total, value) => total + value,
-      );
-      final cropConfidence = totalCropScore > 0
-          ? cropScores[detectedCrop]! / totalCropScore
-          : 0.0;
-      if (_selectedCropType == 'Auto' && cropConfidence < 0.20) {
-        throw Exception('نوع المحصول غير معروف');
-      }
-
-      // Step 2: detect disease only among labels belonging to the identified crop.
-      final relevantIndices = cropIndices[detectedCrop]!;
-      final diseaseIndex = relevantIndices.reduce(
+      final diseaseIndex = candidateIndices.reduce(
         (best, index) => result[index] > result[best] ? index : best,
       );
-      final relevantScore = relevantIndices.fold<double>(
-        0,
-        (total, index) => total + (result[index] < 0 ? 0 : result[index]),
-      );
-      final maxVal = relevantScore > 0
-          ? (result[diseaseIndex] < 0 ? 0 : result[diseaseIndex]) /
-                relevantScore
-          : 0.0;
+      final detectedCrop = _extractCropFromLabel(_labels[diseaseIndex]);
+      if (detectedCrop == null) {
+        throw StateError('Predicted label has no recognized crop');
+      }
+      final maxVal = result[diseaseIndex];
       final diseaseRawKey = _labels[diseaseIndex];
 
       // ======= Step 2: Disease Detection =======
@@ -1715,9 +1752,13 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       // البحث في قاموس الأمراض ثنائي اللغة مع دعم المطابقة الدقيقة والمرنة
       DiseaseDetail? bilingualInfo = kPlantDiseasesBilingual[diseaseRawKey];
       if (bilingualInfo == null) {
-        final cleanKey = diseaseRawKey.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+        final cleanKey = diseaseRawKey.toLowerCase().replaceAll(
+          RegExp(r'[^a-z0-9]'),
+          '',
+        );
         for (final entry in kPlantDiseasesBilingual.entries) {
-          if (entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '') == cleanKey) {
+          if (entry.key.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '') ==
+              cleanKey) {
             bilingualInfo = entry.value;
             break;
           }
@@ -1750,14 +1791,12 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
               : bilingualInfo.fertilizerEn,
         };
       } else {
-        final lookupResult = await _diseaseService.lookup(
-          diseaseRawKey,
-          expectedCrop: detectedCrop,
-        );
+        final lookupResult = DiseaseLookupResult.fallback(diseaseRawKey);
         finalData = lookupResult.data;
         // استخراج أسماء المحصول والمرض من بيانات الخدمة
-        cropNameAr = finalData['crop']?.toString() ?? cropNameAr;
-        cropNameEn = finalData['crop']?.toString() ?? cropNameEn;
+        cropNameAr = _cropTranslations[detectedCrop] ?? detectedCrop;
+        cropNameEn = detectedCrop;
+        finalData['crop'] = isAr ? cropNameAr : cropNameEn;
         diseaseAr = finalData['name']?.toString() ?? diseaseRawKey;
         diseaseEn = finalData['name']?.toString() ?? diseaseRawKey;
       }
@@ -1782,49 +1821,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       }
 
       // حفظ التشخيص تلقائياً في السجل التاريخي لقاعدة البيانات
-      final farmCode = FarmSessionService.currentFarmCode;
-      final userProfile = FarmSessionService.currentUserProfile.value;
-      final savedByUid = FirebaseAuth.instance.currentUser?.uid ?? '';
-      final savedByName = userProfile?['name']?.toString() ?? 'Unknown';
-      final savedByRole = userProfile?['role']?.toString() ?? 'worker';
-
-      if (farmCode.isNotEmpty) {
-        try {
-          await FirebaseFirestore.instance.collection('diagnosis_history').add({
-            'farm_code': farmCode,
-            'crop_name_ar': cropNameAr,
-            'crop_name_en': cropNameEn,
-            'disease_name_ar': diseaseAr,
-            'disease_name_en': diseaseEn,
-            'disease_raw_key': diseaseRawKey,
-            'confidence': maxVal,
-            'notes': _notesController.text.trim(),
-            'note_category': customCategory,
-            'note_analysis': customAnalysis,
-            'note_guidance': customGuidance,
-            'fertilizer': customFert ?? finalData['fertilizer'],
-            'treatments': finalData['treatments'],
-            // حفظ بيانات المستخدم الذي أجرى التشخيص (للتحكم في صلاحيات الحذف)
-            'created_by_uid': savedByUid,
-            'created_by_name': savedByName,
-            'created_by_role': savedByRole,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
-
-          // إرسال إشعار للمزرعة إذا تم تشخيص مرض
-          if (!diseaseRawKey.contains('healthy')) {
-            await FarmNotificationService.notifyDiseaseDetected(
-              isAr ? cropNameAr : cropNameEn,
-              diseaseAr,
-              diseaseEn,
-              farmCode,
-            );
-          }
-        } catch (_) {}
-      }
-
+      // Render the local diagnosis before starting optional Firebase work.
       if (!mounted) return;
-
       setState(() {
         _confidence = maxVal;
         _diseaseResult = finalData;
@@ -1832,18 +1830,78 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         _symptomAnalysisNote = customAnalysis;
         _symptomGuidance = customGuidance;
         _customFertilizerAdvice = customFert;
-        _isClassifying = false;
         _statusMessage = null;
       });
+
+      final farmCode = FarmSessionService.currentFarmCode;
+      if (farmCode.isNotEmpty) {
+        final userProfile = FarmSessionService.currentUserProfile.value;
+        unawaited(
+          _persistDiagnosisInBackground(
+            farmCode: farmCode,
+            record: {
+              'farm_code': farmCode,
+              'crop_name_ar': cropNameAr,
+              'crop_name_en': cropNameEn,
+              'disease_name_ar': diseaseAr,
+              'disease_name_en': diseaseEn,
+              'disease_raw_key': diseaseRawKey,
+              'confidence': maxVal,
+              'notes': _notesController.text.trim(),
+              'note_category': customCategory,
+              'note_analysis': customAnalysis,
+              'note_guidance': customGuidance,
+              'fertilizer': customFert ?? finalData['fertilizer'],
+              'treatments': finalData['treatments'],
+              'created_by_uid': FirebaseAuth.instance.currentUser?.uid ?? '',
+              'created_by_name': userProfile?['name']?.toString() ?? 'Unknown',
+              'created_by_role': userProfile?['role']?.toString() ?? 'worker',
+              'createdAt': FieldValue.serverTimestamp(),
+            },
+            notify: !diseaseRawKey.contains('healthy'),
+            cropName: isAr ? cropNameAr : cropNameEn,
+            diseaseAr: diseaseAr,
+            diseaseEn: diseaseEn,
+          ),
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       final isUnknownCrop = e.toString().contains('نوع المحصول غير معروف');
       setState(() {
-        _isClassifying = false;
         _statusMessage = isUnknownCrop
             ? (isAr ? 'نوع المحصول غير معروف' : 'Unknown crop type')
             : (isAr ? 'فشل التحليل: $e' : 'Analysis failed: $e');
       });
+    } finally {
+      if (mounted) {
+        setState(() => _isClassifying = false);
+      }
+    }
+  }
+
+  Future<void> _persistDiagnosisInBackground({
+    required String farmCode,
+    required Map<String, dynamic> record,
+    required bool notify,
+    required String cropName,
+    required String diseaseAr,
+    required String diseaseEn,
+  }) async {
+    try {
+      await FirebaseFirestore.instance
+          .collection('diagnosis_history')
+          .add(record);
+      if (notify) {
+        await FarmNotificationService.notifyDiseaseDetected(
+          cropName,
+          diseaseAr,
+          diseaseEn,
+          farmCode,
+        );
+      }
+    } catch (_) {
+      // The local diagnosis is already visible; syncing is best effort.
     }
   }
 
@@ -2762,7 +2820,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                         child: Row(
                           children: [
                             _buildQuickNoteChip(
-                              isAr ? '⏳ الها شهر نفس الحجم' : '⏳ Same size for month',
+                              isAr
+                                  ? '⏳ الها شهر نفس الحجم'
+                                  : '⏳ Same size for month',
                               'الها شهر نفس الحجم',
                             ),
                             const SizedBox(width: 6),
@@ -2777,7 +2837,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                             ),
                             const SizedBox(width: 6),
                             _buildQuickNoteChip(
-                              isAr ? '💧 ري يومي والتربة رطبة' : '💧 Daily watering',
+                              isAr
+                                  ? '💧 ري يومي والتربة رطبة'
+                                  : '💧 Daily watering',
                               'الري يومي والتربة رطبة باستمرار',
                             ),
                             const SizedBox(width: 6),
@@ -3047,7 +3109,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                                         ),
                                         decoration: BoxDecoration(
                                           color: const Color(0xFFE3F2FD),
-                                          borderRadius: BorderRadius.circular(8),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
                                           border: Border.all(
                                             color: const Color(0xFF90CAF9),
                                           ),
