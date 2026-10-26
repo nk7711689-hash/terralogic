@@ -122,21 +122,12 @@ class FarmNotificationService {
         .map((snap) => snap.docs.length);
   }
 
-  /// تحديد جميع إشعارات المزرعة كمقروءة
+  /// The current schema stores a shared `isRead` flag, not per-user state.
+  /// Refuse to modify that shared field from an individual client.
   static Future<void> markAllAsRead(String farmCode) async {
-    if (farmCode.isEmpty) return;
-
-    final unread = await _firestore
-        .collection('notifications')
-        .where('farm_code', isEqualTo: farmCode)
-        .where('isRead', isEqualTo: false)
-        .get();
-
-    WriteBatch batch = _firestore.batch();
-    for (var doc in unread.docs) {
-      batch.update(doc.reference, {'isRead': true});
-    }
-    await batch.commit();
+    throw UnsupportedError(
+      'Per-user notification read state requires a separate trusted data model.',
+    );
   }
 
   /// مسح إشعار محدد

@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:terralogic/core/language_controller.dart';
 import 'package:terralogic/core/notification_service.dart';
+import 'package:terralogic/core/terra_theme.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -498,7 +499,7 @@ class _SignUpScreenState extends State<SignUpScreen> with SingleTickerProviderSt
         return Directionality(
           textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
           child: Scaffold(
-            backgroundColor: const Color(0xFFF7F9F7),
+            backgroundColor: TerraTheme.mist,
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,

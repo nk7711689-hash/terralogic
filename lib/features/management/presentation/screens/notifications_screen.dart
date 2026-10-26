@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:terralogic/core/farm_session_service.dart';
 import 'package:terralogic/core/notification_service.dart';
+import 'package:terralogic/core/terra_theme.dart';
 
 class NotificationsScreen extends StatelessWidget {
   final bool isArabic;
@@ -15,7 +16,7 @@ class NotificationsScreen extends StatelessWidget {
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F9F7),
+        backgroundColor: TerraTheme.mist,
         appBar: AppBar(
           title: Text(
             isAr ? 'مركز إشعارات وتنبيهات المزرعة' : 'Farm Notifications & Alerts',
@@ -30,14 +31,20 @@ class NotificationsScreen extends StatelessWidget {
                   style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF2E7D32)),
                 ),
                 onPressed: () async {
-                  await FarmNotificationService.markAllAsRead(farmCode);
-                  if (context.mounted) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(isAr ? 'تم تحديد جميع الإشعارات كمقروءة' : 'All notifications marked as read'),
-                        backgroundColor: const Color(0xFF2E7D32),
-                      ),
-                    );
+                  try {
+                    await FarmNotificationService.markAllAsRead(farmCode);
+                  } on UnsupportedError {
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            isAr
+                                ? 'حالة القراءة مشتركة حاليًا؛ يلزم دعم حالة قراءة مستقلة لكل عضو.'
+                                : 'Read state is currently shared. Per-member read states are required.',
+                          ),
+                        ),
+                      );
+                    }
                   }
                 },
               ),

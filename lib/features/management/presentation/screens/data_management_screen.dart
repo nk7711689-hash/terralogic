@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:terralogic/core/farm_session_service.dart';
+import 'package:terralogic/core/terra_theme.dart';
 
 class DataManagementScreen extends StatefulWidget {
   final bool isArabic;
@@ -108,7 +109,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F9F7),
+        backgroundColor: TerraTheme.mist,
         appBar: AppBar(
           title: Text(
             isAr ? "إدارة بيانات المزرعة" : "Farm Data Management",
@@ -177,27 +178,10 @@ class _DataManagementScreenState extends State<DataManagementScreen>
             ),
           ),
           onPressed: () {
-            final isManager = FarmSessionService.isManager;
-            final canEditCrop =
-                isManager || FarmSessionService.allowWorkerCropEdit.value;
-
             if (_tabController.index == 0) {
-              if (canEditCrop) {
-                _showAddCropBottomSheet(isAr);
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      isAr
-                          ? 'صلاحية إضافة وتعديل المحاصيل مقيدة من قبل المدير'
-                          : 'Adding crops is restricted by the manager',
-                    ),
-                    backgroundColor: Colors.orange.shade800,
-                  ),
-                );
-              }
+              _showAddCropBottomSheet(isAr);
             } else {
-              if (isManager) {
+              if (FarmSessionService.isOwner) {
                 _showAddWorkerBottomSheet(isAr);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -221,6 +205,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
   // --- قسم المحاصيل ---
   Widget _buildCropsView(bool isAr) {
     final farmCode = FarmSessionService.currentFarmCode;
+    final canViewFinancials = FarmSessionService.canViewFinancials;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
           ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
@@ -479,20 +464,17 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                                       ],
                                     ),
                                   ),
-                                  PopupMenuItem(
-                                    value: 'delete',
-                                    child: Row(
-                                      children: [
-                                        const Icon(
-                                          Icons.delete_outline,
-                                          size: 18,
-                                          color: Colors.red,
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(isAr ? 'حذف' : 'Delete'),
-                                      ],
+                                  if (FarmSessionService.isOwner)
+                                    PopupMenuItem(
+                                      value: 'delete',
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                          const SizedBox(width: 8),
+                                          Text(isAr ? 'حذف' : 'Delete'),
+                                        ],
+                                      ),
                                     ),
-                                  ),
                                 ],
                               ),
                             ],
@@ -509,23 +491,21 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                           color: const Color(0xFFF9FAF9),
                           borderRadius: BorderRadius.circular(10),
                         ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Wrap(
+                          spacing: 10,
+                          runSpacing: 8,
                           children: [
                             _buildInfoMiniItem(
                               isAr ? "الكمية" : "Quantity",
                               "$quantity ${isAr ? 'كغم' : 'kg'}",
                             ),
-                            _buildInfoMiniItem(
-                              isAr ? "التكلفة" : "Cost",
-                              "$cost JD",
-                            ),
-                            _buildInfoMiniItem(
-                              isAr ? "المبيعات" : "Sales",
-                              sales == 0
-                                  ? (isAr ? "لم يبع" : "Not Sold")
-                                  : "$sales JD",
-                            ),
+                            if (canViewFinancials)
+                              _buildInfoMiniItem(isAr ? "التكلفة" : "Cost", "$cost JD"),
+                            if (canViewFinancials)
+                              _buildInfoMiniItem(
+                                isAr ? "المبيعات" : "Sales",
+                                sales == 0 ? (isAr ? "لم يبع" : "Not Sold") : "$sales JD",
+                              ),
                             _buildInfoMiniItem(
                               isAr ? "القطاف" : "Harvest",
                               harvestDate,
@@ -546,7 +526,22 @@ class _DataManagementScreenState extends State<DataManagementScreen>
 
   // --- قسم العمال ---
   Widget _buildWorkersView(bool isAr) {
+    if (!FarmSessionService.isOwner) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Text(
+            isAr
+                ? 'بيانات الفريق متاحة للمالك فقط حتى اعتماد تفويضات المدير.'
+                : 'Team records are owner-only until manager scopes are configured.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+          ),
+        ),
+      );
+    }
     final farmCode = FarmSessionService.currentFarmCode;
+    final canViewFinancials = FarmSessionService.canViewFinancials;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
           ? FirebaseFirestore.instance
@@ -639,7 +634,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
           var d = doc.data() as Map<String, dynamic>;
           String s = d['status']?.toString() ?? 'نشط';
           if (s == 'نشط' || s == 'Active') activeCount++;
-          totalPayroll += _toDouble(d['salary']);
+          if (canViewFinancials) totalPayroll += _toDouble(d['salary']);
         }
 
         return ListView(
@@ -647,7 +642,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
           children: [
             Row(
               children: [
-                Expanded(
+                if (canViewFinancials) Expanded(
                   child: _buildMetricCard(
                     isAr ? "إجمالي العمال" : "Total Workers",
                     "${workersDocs.length}",
@@ -680,7 +675,6 @@ class _DataManagementScreenState extends State<DataManagementScreen>
             ...workersDocs.asMap().entries.map((entry) {
               var doc = entry.value;
               final data = doc.data() as Map<String, dynamic>;
-              final String id = doc.id;
 
               final String name =
                   data['name']?.toString() ?? (isAr ? 'بدون اسم' : 'Unnamed');
@@ -756,13 +750,13 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                               ],
                             ),
                             const SizedBox(height: 4),
-                            Text(
+                            if (canViewFinancials) Text(
                               "$role · ${isAr ? 'راتب' : 'Salary'} $salaryType: $salary JD",
                               style: TextStyle(
                                 color: Colors.grey.shade600,
                                 fontSize: 12,
                               ),
-                            ),
+                            ) else Text(role, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -774,7 +768,6 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                         onSelected: (value) => _handleWorkerAction(
                           value,
                           doc,
-                          id,
                           name,
                           notes,
                           isAr,
@@ -805,20 +798,6 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                                 ),
                                 const SizedBox(width: 8),
                                 Text(isAr ? 'تعديل' : 'Edit'),
-                              ],
-                            ),
-                          ),
-                          PopupMenuItem(
-                            value: 'delete',
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.delete_outline,
-                                  size: 18,
-                                  color: Colors.red,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(isAr ? 'حذف' : 'Delete'),
                               ],
                             ),
                           ),
@@ -897,27 +876,12 @@ class _DataManagementScreenState extends State<DataManagementScreen>
     String notes,
     bool isAr,
   ) async {
-    final isManager = FarmSessionService.isManager;
-    final canEdit = isManager || FarmSessionService.allowWorkerCropEdit.value;
-    final canDelete = isManager || FarmSessionService.allowWorkerDelete.value;
+    final canDelete = FarmSessionService.isOwner;
 
     if (action == 'details') {
       _showNotesDialog(name, notes);
     } else if (action == 'edit') {
-      if (canEdit) {
-        _showEditCropBottomSheet(isAr, doc);
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isAr
-                  ? 'صلاحية التعديل مقيدة من قبل المدير'
-                  : 'Editing is restricted by manager',
-            ),
-            backgroundColor: Colors.orange.shade800,
-          ),
-        );
-      }
+      _showEditCropBottomSheet(isAr, doc);
     } else if (action == 'delete') {
       if (!canDelete) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -932,6 +896,26 @@ class _DataManagementScreenState extends State<DataManagementScreen>
         );
         return;
       }
+      final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(isAr ? 'حذف المحصول؟' : 'Delete crop?'),
+          content: Text(isAr
+              ? 'سيُحذف سجل المحصول نهائيًا. هل تريد المتابعة؟'
+              : 'This crop record will be permanently deleted. Continue?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              child: Text(isAr ? 'إلغاء' : 'Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              child: Text(isAr ? 'حذف' : 'Delete'),
+            ),
+          ],
+        ),
+      );
+      if (confirmed != true) return;
       try {
         await FirebaseFirestore.instance.collection('crops').doc(id).delete();
         if (mounted) {
@@ -960,17 +944,15 @@ class _DataManagementScreenState extends State<DataManagementScreen>
   void _handleWorkerAction(
     String action,
     DocumentSnapshot doc,
-    String id,
     String name,
     String notes,
     bool isAr,
   ) async {
-    final isManager = FarmSessionService.isManager;
 
     if (action == 'details') {
       _showNotesDialog(name, notes);
     } else if (action == 'edit') {
-      if (isManager) {
+      if (FarmSessionService.isOwner) {
         _showEditWorkerBottomSheet(isAr, doc);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -983,44 +965,6 @@ class _DataManagementScreenState extends State<DataManagementScreen>
             backgroundColor: Colors.orange.shade800,
           ),
         );
-      }
-    } else if (action == 'delete') {
-      if (!isManager) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              isAr
-                  ? 'حذف العمال مقتصر على المدير'
-                  : 'Deleting staff is restricted to managers',
-            ),
-            backgroundColor: Colors.orange.shade800,
-          ),
-        );
-        return;
-      }
-      try {
-        await FirebaseFirestore.instance.collection('workers').doc(id).delete();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                isAr
-                    ? 'تم حذف العامل بنجاح ✅'
-                    : 'Worker deleted successfully ✅',
-              ),
-              backgroundColor: const Color(0xFF2E7D32),
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isAr ? 'خطأ أثناء الحذف: $e' : 'Delete error: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
       }
     }
   }
@@ -1165,28 +1109,32 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: costCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: isAr ? 'التكلفة (JD)' : 'Cost (JD)',
+                    if (FarmSessionService.canViewFinancials) ...[
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: costCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: isAr ? 'التكلفة (JD)' : 'Cost (JD)',
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: salesCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: isAr
-                        ? 'سعر البيع المستلم (0 إن لم يبع)'
-                        : 'Sales Revenue (0 if not sold)',
+                if (FarmSessionService.canViewFinancials) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: salesCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: isAr
+                          ? 'سعر البيع المستلم (0 إن لم يبع)'
+                          : 'Sales Revenue (0 if not sold)',
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedStatus,
@@ -1216,7 +1164,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                   onPressed: () async {
                     if (nameCtrl.text.trim().isEmpty) return;
                     try {
-                      await FirebaseFirestore.instance.collection('crops').add({
+                      final cropData = <String, dynamic>{
                         'name': nameCtrl.text.trim(),
                         'type': selectedType,
                         'plantDate': plantDateCtrl.text.isEmpty
@@ -1226,13 +1174,18 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                             ? '-'
                             : harvestDateCtrl.text.trim(),
                         'quantity': _toDouble(qtyCtrl.text),
-                        'cost': _toDouble(costCtrl.text),
-                        'sales': _toDouble(salesCtrl.text),
                         'status': selectedStatus,
                         'notes': notesCtrl.text.trim(),
                         'farm_code': currentFarmCode ?? '',
                         'createdAt': FieldValue.serverTimestamp(),
-                      });
+                      };
+                      if (FarmSessionService.canViewFinancials) {
+                        cropData['cost'] = _toDouble(costCtrl.text);
+                        cropData['sales'] = _toDouble(salesCtrl.text);
+                      }
+                      await FirebaseFirestore.instance
+                          .collection('crops')
+                          .add(cropData);
 
                       if (context.mounted) {
                         Navigator.pop(context);
@@ -1428,26 +1381,30 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                         ),
                       ),
                     ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: TextField(
-                        controller: costCtrl,
-                        keyboardType: TextInputType.number,
-                        decoration: InputDecoration(
-                          labelText: isAr ? 'التكلفة' : 'Cost',
+                    if (FarmSessionService.canViewFinancials) ...[
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: TextField(
+                          controller: costCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            labelText: isAr ? 'التكلفة' : 'Cost',
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: salesCtrl,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(
-                    labelText: isAr ? 'سعر البيع المستلم' : 'Sales Revenue',
+                if (FarmSessionService.canViewFinancials) ...[
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: salesCtrl,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: isAr ? 'سعر البيع المستلم' : 'Sales Revenue',
+                    ),
                   ),
-                ),
+                ],
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
                   initialValue: selectedStatus,
@@ -1480,20 +1437,23 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                   onPressed: () async {
                     if (nameCtrl.text.trim().isEmpty) return;
                     try {
-                      await FirebaseFirestore.instance
-                          .collection('crops')
-                          .doc(doc.id)
-                          .update({
+                      final cropUpdates = <String, dynamic>{
                             'name': nameCtrl.text.trim(),
                             'type': selectedType,
                             'plantDate': plantDateCtrl.text.trim(),
                             'harvestDate': harvestDateCtrl.text.trim(),
                             'quantity': _toDouble(qtyCtrl.text),
-                            'cost': _toDouble(costCtrl.text),
-                            'sales': _toDouble(salesCtrl.text),
                             'status': selectedStatus,
                             'notes': notesCtrl.text.trim(),
-                          });
+                          };
+                      if (FarmSessionService.canViewFinancials) {
+                        cropUpdates['cost'] = _toDouble(costCtrl.text);
+                        cropUpdates['sales'] = _toDouble(salesCtrl.text);
+                      }
+                      await FirebaseFirestore.instance
+                          .collection('crops')
+                          .doc(doc.id)
+                          .update(cropUpdates);
 
                       if (context.mounted) {
                         Navigator.pop(context);

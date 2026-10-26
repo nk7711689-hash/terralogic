@@ -283,8 +283,8 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
         ),
         content: Text(
           isAr
-              ? 'سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني:\n\n${user.email}'
-              : 'A password reset link will be sent to your email:\n\n${user.email}',
+              ? 'سيتم إرسال رابط إعادة تعيين كلمة المرور إلى بريدك الإلكتروني:\r\n\r\n${user.email}'
+              : 'A password reset link will be sent to your email:\r\n\r\n${user.email}',
           style: const TextStyle(fontSize: 13, height: 1.4),
         ),
         actions: [
@@ -358,6 +358,7 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
     final isManager = FarmSessionService.isManager;
+    final canManageFarm = FarmSessionService.isOwner;
     final userProfile = FarmSessionService.currentUserProfile.value;
     final farmData = FarmSessionService.currentFarmData.value;
 
@@ -486,7 +487,7 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
                   isAr: isAr,
                 ),
                 const SizedBox(height: 8),
-                if (isManager) ...[
+                if (canManageFarm) ...[
                   _buildCodeRow(
                     label: isAr ? 'رمز أمان المدير (Admin Key)' : 'Admin / Manager Key',
                     value: managerCode,
@@ -521,7 +522,7 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
             // ═══════════════════════════════════════════
             // 3. لوحة الصلاحيات الشاملة (مدير/مالك فقط)
             // ═══════════════════════════════════════════
-            if (isManager) ...[
+            if (canManageFarm) ...[
               _buildSectionCard(
                 isAr: isAr,
                 icon: Icons.tune_rounded,
@@ -530,31 +531,20 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
                     ? 'تحكم بما يستطيع العمال رؤيته وتعديله داخل التطبيق:'
                     : 'Configure what workers can view and modify inside the app:',
                 children: [
-                  _buildPermissionSwitch(
-                    isAr: isAr,
-                    title: isAr ? 'إتاحة التحليلات المالية' : 'Financial Analytics Access',
-                    subtitle: isAr ? 'يُحجب تبويب الأرباح والتكاليف عن العمال عند التعطيل' : 'Hides financial tabs from workers when disabled',
-                    icon: Icons.bar_chart_rounded,
-                    value: _allowFinancials,
-                    onChanged: (val) => setState(() => _allowFinancials = val),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE7F0E7),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: Text(
+                      isAr
+                          ? 'العامل يستطيع إضافة المحاصيل وتعديل بياناتها غير المالية، ولا يستطيع حذفها أو تعديل تكاليفها ومبيعاتها. حماية هذه البيانات من الطلبات المباشرة تتطلب تحديث قواعد Firestore.'
+                          : 'Workers may add crops and edit non-financial fields, but cannot delete crops or edit costs and sales. Enforcing this against direct requests requires Firestore Rules updates.',
+                      style: const TextStyle(fontSize: 12, height: 1.45),
+                    ),
                   ),
-                  _buildPermissionSwitch(
-                    isAr: isAr,
-                    title: isAr ? 'إتاحة تعديل المحاصيل' : 'Crop Editing Access',
-                    subtitle: isAr ? 'السماح للعمال بإضافة وتعديل سجلات المحاصيل' : 'Allows workers to add and edit crop records',
-                    icon: Icons.eco_rounded,
-                    value: _allowCropEdit,
-                    onChanged: (val) => setState(() => _allowCropEdit = val),
-                  ),
-                  _buildPermissionSwitch(
-                    isAr: isAr,
-                    title: isAr ? 'إتاحة حذف السجلات' : 'Record Deletion',
-                    subtitle: isAr ? 'السماح بحذف المحاصيل والعمال (يُفضل تعطيلها)' : 'Allow workers to delete records (Recommended OFF)',
-                    icon: Icons.delete_outline_rounded,
-                    value: _allowDelete,
-                    onChanged: (val) => setState(() => _allowDelete = val),
-                    isDanger: true,
-                  ),
+                  const SizedBox(height: 10),
                   _buildPermissionSwitch(
                     isAr: isAr,
                     title: isAr ? 'إتاحة طبيب النبات AI' : 'AI Plant Doctor Access',

@@ -29,6 +29,10 @@ abstract final class TerraTheme {
       scaffoldBackgroundColor: mist,
       splashFactory: InkSparkle.splashFactory,
       visualDensity: VisualDensity.standard,
+      textTheme: ThemeData.light().textTheme.apply(
+        bodyColor: ink,
+        displayColor: ink,
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: mist,
         foregroundColor: ink,
@@ -52,6 +56,45 @@ abstract final class TerraTheme {
           borderRadius: BorderRadius.circular(22),
           side: const BorderSide(color: line),
         ),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: paper,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+        titleTextStyle: const TextStyle(
+          color: ink,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: paper,
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: forest,
+        unselectedLabelColor: olive,
+        indicatorColor: forest,
+        dividerColor: line,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: ink,
+        contentTextStyle: const TextStyle(color: Colors.white),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: forest,
+        foregroundColor: Colors.white,
+        elevation: 2,
+      ),
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: paper,
+        selectedItemColor: forest,
+        unselectedItemColor: olive,
+        type: BottomNavigationBarType.fixed,
+        elevation: 0,
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
@@ -109,6 +152,10 @@ abstract final class TerraTheme {
       useMaterial3: true,
       colorScheme: scheme,
       scaffoldBackgroundColor: const Color(0xFF10231E),
+      textTheme: ThemeData.dark().textTheme.apply(
+        bodyColor: const Color(0xFFE6EFE8),
+        displayColor: const Color(0xFFE6EFE8),
+      ),
       appBarTheme: const AppBarTheme(
         backgroundColor: Color(0xFF10231E),
         foregroundColor: Colors.white,
@@ -120,6 +167,27 @@ abstract final class TerraTheme {
         elevation: 1,
         margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      ),
+      dialogTheme: DialogThemeData(
+        backgroundColor: const Color(0xFF18352D),
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: Color(0xFF18352D),
+        surfaceTintColor: Colors.transparent,
+        showDragHandle: true,
+      ),
+      tabBarTheme: const TabBarThemeData(
+        labelColor: sage,
+        unselectedLabelColor: Color(0xFFB2C6BC),
+        indicatorColor: sage,
+        dividerColor: Color(0xFF315A4D),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: const Color(0xFF24483D),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,

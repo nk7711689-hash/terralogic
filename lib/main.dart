@@ -165,8 +165,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               const SizedBox(height: 8),
               Text(
                 isAr
-                    ? 'تم تقييد الوصول إلى البيانات والأرباح المالية للعمال من قبل مدير المزرعة. يمكنك طلب تفعيل الصلاحية من المدير.'
-                    : 'Access to financial yields & profits is restricted for workers by the farm manager.',
+                    ? 'لا تتوفر لهذا الحساب صلاحية عرض البيانات المالية. يحدد المالك الوصول لكل نطاق، وتُقيّد الصلاحية افتراضيًا حتى اعتمادها.'
+                    : 'This account has no financial access. The owner controls each scope, and access stays restricted until explicitly granted.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 13,

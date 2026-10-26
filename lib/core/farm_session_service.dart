@@ -34,35 +34,71 @@ class FarmSessionService {
   static StreamSubscription? _userSub;
   static StreamSubscription? _farmSub;
 
+  static void _clearFarmState() {
+    currentFarmData.value = null;
+    allowWorkerFinancials.value = false;
+    allowWorkerCropEdit.value = false;
+    allowWorkerDelete.value = false;
+    allowWorkerDiagnosis.value = false;
+    autoApproveWorkers.value = false;
+    notifyFrost.value = false;
+    notifySecurityLogin.value = false;
+    notifyTeamActivity.value = false;
+    notifyHarvestReminder.value = false;
+    tempUnit.value = 'C';
+  }
+
   /// تهيئة ومراقبة بيانات المستخدم والمزرعة الحالية
   static void initialize() {
     FirebaseAuth.instance.authStateChanges().listen((User? user) {
       _userSub?.cancel();
       _farmSub?.cancel();
+      currentUserProfile.value = null;
+      _clearFarmState();
 
       if (user != null) {
-        _userSub = FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots().listen((userDoc) {
-          if (userDoc.exists) {
-            final uData = userDoc.data() as Map<String, dynamic>;
-            currentUserProfile.value = uData;
-            final farmCode = uData['farm_code']?.toString() ?? '';
-
-            if (farmCode.isNotEmpty) {
-              _listenToFarm(farmCode);
-            }
-          }
-        });
-      } else {
-        currentUserProfile.value = null;
-        currentFarmData.value = null;
+        _userSub = FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .snapshots()
+            .listen(
+              (userDoc) {
+                if (!userDoc.exists) {
+                  currentUserProfile.value = null;
+                  _clearFarmState();
+                  return;
+                }
+                final uData = userDoc.data() as Map<String, dynamic>;
+                currentUserProfile.value = uData;
+                final farmCode = uData['farm_code']?.toString() ?? '';
+                if (farmCode.isNotEmpty) {
+                  _listenToFarm(farmCode);
+                } else {
+                  _farmSub?.cancel();
+                  _clearFarmState();
+                }
+              },
+              onError: (_) {
+                currentUserProfile.value = null;
+                _clearFarmState();
+              },
+            );
       }
     });
   }
 
   static void _listenToFarm(String farmCode) {
     _farmSub?.cancel();
-    _farmSub = FirebaseFirestore.instance.collection('farms').doc(farmCode).snapshots().listen((farmDoc) {
-      if (farmDoc.exists) {
+    _farmSub = FirebaseFirestore.instance
+        .collection('farms')
+        .doc(farmCode)
+        .snapshots()
+        .listen(
+      (farmDoc) {
+        if (!farmDoc.exists) {
+          _clearFarmState();
+          return;
+        }
         final fData = farmDoc.data() as Map<String, dynamic>;
         currentFarmData.value = fData;
         
@@ -70,7 +106,7 @@ class FarmSessionService {
         allowWorkerFinancials.value = fData['allow_worker_financials'] ?? false;
         allowWorkerCropEdit.value = fData['allow_worker_crop_edit'] ?? true;
         allowWorkerDelete.value = fData['allow_worker_delete'] ?? false;
-        allowWorkerDiagnosis.value = fData['allow_worker_diagnosis'] ?? true;
+        allowWorkerDiagnosis.value = fData['allow_worker_diagnosis'] == true;
         autoApproveWorkers.value = fData['auto_approve_workers'] ?? true;
 
         // تفضيلات الإشعارات
@@ -81,9 +117,13 @@ class FarmSessionService {
 
         // تفضيلات النظام
         tempUnit.value = fData['temp_unit']?.toString() ?? 'C';
-      }
-    });
+      },
+      onError: (_) => _clearFarmState(),
+    );
   }
+
+  static bool get isOwner =>
+      currentUserProfile.value?['role']?.toString().toLowerCase() == 'owner';
 
   /// هل المستخدم الحالي مدير / مالك؟
   static bool get isManager {
@@ -93,8 +133,15 @@ class FarmSessionService {
 
   /// هل يستطيع المستخدم الحالي رؤية المالية؟
   static bool get canViewFinancials {
-    if (isManager) return true;
-    return allowWorkerFinancials.value;
+    // The current model has no explicit manager financial grant or private
+    // salary records, so access remains owner-only until that model exists.
+    return isOwner;
+  }
+
+  static bool get canSaveDiagnosis {
+    final role = currentUserProfile.value?['role']?.toString().toLowerCase();
+    if (role == 'owner') return true;
+    return role == 'worker' && allowWorkerDiagnosis.value;
   }
 
   /// كود المزرعة الحالية

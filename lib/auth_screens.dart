@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'core/language_controller.dart';
 import 'core/notification_service.dart';
+import 'core/terra_theme.dart';
 import 'main.dart';
 import 'signup_screen.dart';
 
@@ -43,7 +44,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F9F7),
+      backgroundColor: TerraTheme.mist,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -352,7 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
         return Directionality(
           textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
           child: Scaffold(
-            backgroundColor: const Color(0xFFF7F9F7),
+            backgroundColor: TerraTheme.mist,
             appBar: AppBar(
               backgroundColor: Colors.transparent,
               elevation: 0,

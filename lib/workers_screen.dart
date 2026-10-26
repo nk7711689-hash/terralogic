@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:terralogic/core/farm_session_service.dart';
 
 class WorkersScreen extends StatefulWidget {
   const WorkersScreen({super.key});
@@ -121,13 +122,24 @@ class _WorkersScreenState extends State<WorkersScreen> {
     );
   }
 
-  // دالة حذف العامل من المزرعة
-  Future<void> _deleteWorker(String docId) async {
-    await FirebaseFirestore.instance.collection('workers').doc(docId).delete();
-  }
-
   @override
   Widget build(BuildContext context) {
+    if (!FarmSessionService.isOwner) {
+      return Scaffold(
+        appBar: AppBar(title: Text(isArabic ? 'إدارة العمال' : 'Worker management')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text(
+              isArabic
+                  ? 'بيانات الفريق متاحة للمالك فقط حتى اعتماد نطاقات تفويض المدير.'
+                  : 'Team records are owner-only until manager scopes are configured.',
+              textAlign: TextAlign.center,
+            ),
+          ),
+        ),
+      );
+    }
     if (currentFarmCode == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator(color: Colors.green)));
     }
@@ -172,10 +184,6 @@ class _WorkersScreenState extends State<WorkersScreen> {
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
                         onPressed: () => _editWorker(worker.id, worker['name'], worker['salary'], worker['role']),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _deleteWorker(worker.id),
                       ),
                     ],
                   ),

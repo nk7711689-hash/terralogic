@@ -11,6 +11,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:terralogic/core/farm_session_service.dart';
 import 'package:terralogic/core/notification_service.dart';
+import 'package:terralogic/core/terra_theme.dart';
 import 'package:terralogic/features/ai_plant_doctor/data/plant_disease_service.dart';
 
 /// قاموس الأمراض الشامل ثنائي اللغة (عربي وإنجليزي) مع خطط التسميد والعلاج المخصصة لكل مرض
@@ -1174,13 +1175,6 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   String? _symptomGuidance;
   String? _customFertilizerAdvice;
 
-  // معايير ضبط جودة ودقة التشخيص والحد الأدنى للثقة
-  static const double kConfidenceThreshold =
-      0.65; // الحد الأدنى المعتمد للثقة (65%)
-  bool _isLowConfidenceRejected = false;
-  double? _rejectedConfidence;
-  String? _rejectedCropAttempt;
-
   List<int> _inputShape = [1, 224, 224, 3];
   int _numClasses = 14;
 
@@ -1275,9 +1269,6 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       _diseaseResult = null;
       _confidence = null;
       _statusMessage = null;
-      _isLowConfidenceRejected = false;
-      _rejectedConfidence = null;
-      _rejectedCropAttempt = null;
       _symptomCategoryTitle = null;
       _symptomAnalysisNote = null;
       _symptomGuidance = null;
@@ -1320,11 +1311,11 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             ? '🔍 تحليل الملاحظة: بقاء النبات أو الأعراض بنفس الحجم لمدة شهر (أو أكثر) يعكس حالة "إجهاد فسيولوجي مزمن وركود نمو" (Chronic Stagnation). هذا الثبات يعني أن المشكلة لم تعد سطحية، بل تدل على كسل المجموع الجذري وتوقف امتصاص الفوسفور والعناصر الكبرى نتيجة برودة أو انضغاط التربة، أو وجود أعفان ونيماتودا خفية تعطل صعود الغذاء للقمم النامية.'
             : '🔍 Observation Analysis: Static lesion expansion or stagnant plant size for a month indicates chronic physiological stagnation. Feeder roots have stalled, blocking Phosphorus and micronutrient uptake due to soil compaction, cold root-zones, or hidden subclinical root rot/nematodes.',
         guidance: isAr
-            ? '📋 التوجيه الفوري الموصى به:\n1. إجراء عزق (خربشة) سطحي خفيف للتربة حول الشتلة لتهوية الجذور وتصريف الرطوبة الراكدة.\n2. فحص أسفل الساق والتاج للتأكد من خلو الجذور من الاسوداد أو التدرنات.\n3. تقليم الأوراق السفلية القديمة الراكدة لتوجيه طاقة النبات لإنتاج براعم وأوراق جديدة نضرة.'
-            : '📋 Actionable Guidance:\n1. Perform gentle shallow hoeing around root flare to aerate compacted soil.\n2. Check root collar for browning or nematode galls.\n3. Prune stalled lower foliage to redirect energy to fresh vegetative flushes.',
+            ? '📋 التوجيه الفوري الموصى به:\r\n1. إجراء عزق (خربشة) سطحي خفيف للتربة حول الشتلة لتهوية الجذور وتصريف الرطوبة الراكدة.\r\n2. فحص أسفل الساق والتاج للتأكد من خلو الجذور من الاسوداد أو التدرنات.\r\n3. تقليم الأوراق السفلية القديمة الراكدة لتوجيه طاقة النبات لإنتاج براعم وأوراق جديدة نضرة.'
+            : '📋 Actionable Guidance:\r\n1. Perform gentle shallow hoeing around root flare to aerate compacted soil.\r\n2. Check root collar for browning or nematode galls.\r\n3. Prune stalled lower foliage to redirect energy to fresh vegetative flushes.',
         fertilizer: isAr
-            ? '🌱 برنامج كسر السكون وإعادة التنشيط:\n• سقاية سماد عالي الفوسفور (NPK 10-52-10 أو MAP) بمعدل 2-3 كغم/دونم لتجديد الشعيرات الجذرية.\n• سقاية منشط جذري مركب من "هيوميك أسيد + مستخلص طحالب بحرية" (Seaweed Extract) لكسر طور الركود وتحفيز الهرمونات النباتية (الأوكسينات والسيتوكينينات).'
-            : '🌱 Dormancy-Break Program:\n• Drench High-Phosphorus fertilizer (NPK 10-52-10 or MAP) at 2-3 kg/dunam.\n• Apply Humic Acid + Seaweed Extract drench to stimulate lateral roots and endogenous auxins/cytokinins.',
+            ? '🌱 برنامج كسر السكون وإعادة التنشيط:\r\n• سقاية سماد عالي الفوسفور (NPK 10-52-10 أو MAP) بمعدل 2-3 كغم/دونم لتجديد الشعيرات الجذرية.\r\n• سقاية منشط جذري مركب من "هيوميك أسيد + مستخلص طحالب بحرية" (Seaweed Extract) لكسر طور الركود وتحفيز الهرمونات النباتية (الأوكسينات والسيتوكينينات).'
+            : '🌱 Dormancy-Break Program:\r\n• Drench High-Phosphorus fertilizer (NPK 10-52-10 or MAP) at 2-3 kg/dunam.\r\n• Apply Humic Acid + Seaweed Extract drench to stimulate lateral roots and endogenous auxins/cytokinins.',
         treatment: isAr
             ? 'إزالة الأوراق المسنة الراكدة وسقاية مبيد أعفان وقائي خفيف لتطهير محيط الجذور.'
             : 'Remove stagnant older foliage and apply a preventative light root-zone drench.',
@@ -1353,8 +1344,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             ? '🔍 تحليل الملاحظة: ظهور الأعراض منذ أيام قليلة أو أسبوع مع ملاحظة الانتشار السريع يعني أن الممرض في قمة مرحلة التكاثر النشط وإطلاق الجراثيم المتحركة (Active Sporulation). التدخل في هذا التوقيت المبكر يحقق نسبة شفاء تتجاوز 90% ويمنع تحول البؤرة إلى وباء شامل.'
             : '🔍 Observation Analysis: Onset within days or a week with rapid expansion indicates an active sporulation phase. Early systemic intervention during this window delivers over 90% recovery and halts field epidemics.',
         guidance: isAr
-            ? '📋 التوجيه الفوري الموصى به:\n1. تطبيق الرش العلاجي بالمبيد المتخصص خلال أول 24 إلى 48 ساعة دون تأخير.\n2. الامتناع التام عن لمس النباتات أو تقليمها أثناء وجود الندى الصباحي منعاً لنقل الجراثيم السابحة للأشجار المجاورة.'
-            : '📋 Actionable Guidance:\n1. Apply targeted therapeutic spray within 24-48 hours.\n2. Do not handle or prune foliage while wet with dew to avoid dispersing waterborne spores.',
+            ? '📋 التوجيه الفوري الموصى به:\r\n1. تطبيق الرش العلاجي بالمبيد المتخصص خلال أول 24 إلى 48 ساعة دون تأخير.\r\n2. الامتناع التام عن لمس النباتات أو تقليمها أثناء وجود الندى الصباحي منعاً لنقل الجراثيم السابحة للأشجار المجاورة.'
+            : '📋 Actionable Guidance:\r\n1. Apply targeted therapeutic spray within 24-48 hours.\r\n2. Do not handle or prune foliage while wet with dew to avoid dispersing waterborne spores.',
         fertilizer: isAr
             ? '🌱 دعم المناعة السريعة: رش فوسفيت البوتاسيوم (Potassium Phosphite) لتحفيز مركبات الفيتوالكسين الدفاعية في النبات، مع إيقاف الأسمدة النيتروجينية الحرة مؤقتاً لتجنب إضعاف جدر الخلايا.'
             : '🌱 Rapid Immunity Boost: Foliar Potassium Phosphite to induce phytoalexin defenses; halt free nitrogen fertilizers to avoid tissue softening.',
@@ -1384,8 +1375,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             ? '🔍 تحليل الملاحظة: استمرار المرض لفترة طويلة دون تحسن يشير غالباً إلى اكتساب الفطر مقاومة ضد المبيد المكرر (Fungicide Resistance)، أو وجود خلل بيئي مستمر مثل فرط الرطوبة الأرضية أو سوء الصرف الذي يحافظ على دورة حياة الممرض نشطة باستمرار.'
             : '🔍 Observation Analysis: Persistence of symptoms over extended weeks or months suggests pathogen fungicide-resistance or persistent conducive conditions (high humidity, poor air drainage, or contaminated soil).',
         guidance: isAr
-            ? '📋 التوجيه الفوري الموصى به:\n1. التناوب وتغيير مجموعة المبيد الكيميائية (استخدام مبيد بآلية عمل ومجموعة FRAC مختلفة كلياً عن السابق).\n2. قطع الأفرع والأوراق المصابة القديمة والتخلص منها بالحرق خارج المزرعة.'
-            : '📋 Actionable Guidance:\n1. Rotate chemical classes (use a fungicide with a different FRAC mode of action).\n2. Prune heavily infested old growth and incinerate off-site.',
+            ? '📋 التوجيه الفوري الموصى به:\r\n1. التناوب وتغيير مجموعة المبيد الكيميائية (استخدام مبيد بآلية عمل ومجموعة FRAC مختلفة كلياً عن السابق).\r\n2. قطع الأفرع والأوراق المصابة القديمة والتخلص منها بالحرق خارج المزرعة.'
+            : '📋 Actionable Guidance:\r\n1. Rotate chemical classes (use a fungicide with a different FRAC mode of action).\r\n2. Prune heavily infested old growth and incinerate off-site.',
         fertilizer: isAr
             ? '🌱 ترميم وتقوية الأنسجة: رش سيليكات البوتاسيوم + سماد متوازن NPK 20-20-20 لإعادة بناء جدر الخلايا التالفة.'
             : '🌱 Tissue Restoration: Foliar Potassium Silicate + balanced NPK 20-20-20 to rebuild damaged cell walls.',
@@ -1419,8 +1410,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             ? '🔍 تحليل الملاحظة: كثرة الري واستمرار رطوبة التربة يطرد الأكسجين من مسامات الجذور مما يسبب اختناقها (Root Hypoxia) وموت الشعيرات الماصة، ويهيئ بيئة مثالية لفطريات الأعفان (بيثيوم وفيتوفثورا وفطريات الساق).'
             : '🔍 Observation Analysis: Excessive watering deprives roots of oxygen (hypoxia), killing root hairs and triggering destructive soil-borne water molds (Pythium and Phytophthora).',
         guidance: isAr
-            ? '📋 التوجيه الفوري الموصى به:\n1. إيقاف الري تماماً حتى يجف سطح التربة بعمق 3-5 سم.\n2. تحسين مصارف المياه وتجنب ملامسة مياه الري المباشرة لجذع النبات.'
-            : '📋 Actionable Guidance:\n1. Pause irrigation until top 3-5 cm of soil dries completely.\n2. Unclog drainage channels and prevent standing water around plant collars.',
+            ? '📋 التوجيه الفوري الموصى به:\r\n1. إيقاف الري تماماً حتى يجف سطح التربة بعمق 3-5 سم.\r\n2. تحسين مصارف المياه وتجنب ملامسة مياه الري المباشرة لجذع النبات.'
+            : '📋 Actionable Guidance:\r\n1. Pause irrigation until top 3-5 cm of soil dries completely.\r\n2. Unclog drainage channels and prevent standing water around plant collars.',
         fertilizer: isAr
             ? '🌱 إيقاف الأسمدة الكيميائية فوراً لتفادي احتراق الجذور المختنقة، وإضافة منشط مناعة فوسفيت بوتاسيوم بعد جفاف التربة.'
             : '🌱 Suspend chemical fertilizers immediately; drench with Potassium Phosphite once soil breathes.',
@@ -1449,8 +1440,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             ? '🔍 تحليل الملاحظة: جفاف التربة الشديد يؤدي إلى فقدان ضغط الامتلاء وذبول الأوراق وتركيز الأملاح في العصارة النباتية، مما يسبب احتراق أطراف الأوراق وضعف مقاومة النبات للآفات.'
             : '🔍 Observation Analysis: Extreme soil dryness causes loss of turgor pressure, leaf wilting, and sap salinity buildup, scorching leaf margins and lowering pest defense.',
         guidance: isAr
-            ? '📋 التوجيه الفوري الموصى به:\n1. الري المعتدل المنتظم في الصباح الباكر وتجنب الري وقت الظهيرة الحارة.\n2. وضع ملش عضوي (قش أو نشارة) حول مسقط الشتلة لحفظ رطوبة التربة.'
-            : '📋 Actionable Guidance:\n1. Scheduled moderate watering in early mornings, avoiding peak midday heat.\n2. Apply organic mulch around base to conserve soil moisture.',
+            ? '📋 التوجيه الفوري الموصى به:\r\n1. الري المعتدل المنتظم في الصباح الباكر وتجنب الري وقت الظهيرة الحارة.\r\n2. وضع ملش عضوي (قش أو نشارة) حول مسقط الشتلة لحفظ رطوبة التربة.'
+            : '📋 Actionable Guidance:\r\n1. Scheduled moderate watering in early mornings, avoiding peak midday heat.\r\n2. Apply organic mulch around base to conserve soil moisture.',
         fertilizer: isAr
             ? '🌱 رش أحماض أمينية مع بوتاسيوم ومغنيسيوم لتقليل فقد الماء بالنتح واستعادة النضارة.'
             : '🌱 Foliar Amino Acids + Potassium and Magnesium to reduce transpiration and restore turgidity.',
@@ -1481,8 +1472,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
             ? '🔍 تحليل الملاحظة: تساقط الأزهار والعقد الصغير (التنفيل) ينتج غالباً عن تذبذب الري (عطش متبوع بري غزير)، أو نقص عنصري الكالسيوم والبورون المسؤولين عن قوة أنبوب اللقاح وتثبيت العقد.'
             : '🔍 Observation Analysis: Blossom and fruitlet abortion (drop) is triggered by moisture swings or deficiencies in Calcium and Boron, which govern pollen tube vitality and pedicel retention.',
         guidance: isAr
-            ? '📋 التوجيه الفوري الموصى به:\n1. تثبيت كميات ومواعيد الري تماماً أثناء التزهير دون أي تذبذب.\n2. الامتناع عن رش المبيدات الحشرية القوية وقت نشاط حشرات التلقيح (الصباح الباكر).'
-            : '📋 Actionable Guidance:\n1. Fix exact irrigation volume and schedule during bloom.\n2. Halt harsh chemical insecticides during pollinator foraging hours.',
+            ? '📋 التوجيه الفوري الموصى به:\r\n1. تثبيت كميات ومواعيد الري تماماً أثناء التزهير دون أي تذبذب.\r\n2. الامتناع عن رش المبيدات الحشرية القوية وقت نشاط حشرات التلقيح (الصباح الباكر).'
+            : '📋 Actionable Guidance:\r\n1. Fix exact irrigation volume and schedule during bloom.\r\n2. Halt harsh chemical insecticides during pollinator foraging hours.',
         fertilizer: isAr
             ? '🌱 رش ورقي بمركب كالسيوم-بورون سائل (Cal-Bor) بمعدل 1.5-2 مل/لتر + سماد عالي الفوسفور لتثبيت العقد وزيادة نسبة الإخصاب.'
             : '🌱 Foliar spray with Liquid Calcium-Boron (Cal-Bor) at 1.5-2 ml/L + High-P to secure fruit set.',
@@ -1616,8 +1607,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
           ? '🔍 تم ربط ملاحظتك: "${notes.trim()}" مع نتيجة الفحص البصري للذكاء الاصطناعي. تبيّن أن الأعراض المذكورة تعزز التشخيص المكتشف وتتطلب ضبط بيئة النمو والتغذية بالتوازي مع مكافحة المرض.'
           : '🔍 Your observation: "${notes.trim()}" was integrated with the AI vision diagnosis. The reported field condition aligns with the diagnosed pathogen and requires synchronized environmental and nutritional care.',
       guidance: isAr
-          ? '📋 التوجيه الفوري الموصى به:\n1. متابعة تطور الأعراض يومياً والتحقق من عدم انتشارها للنباتات المجاورة.\n2. ضبط التهوية وانتظام الري وتجنب ترطيب الأوراق أثناء التسميد أو الري.'
-          : '📋 Actionable Guidance:\n1. Monitor symptom progression daily across adjacent crop rows.\n2. Maintain canopy aeration, uniform irrigation, and avoid foliage wetting.',
+          ? '📋 التوجيه الفوري الموصى به:\r\n1. متابعة تطور الأعراض يومياً والتحقق من عدم انتشارها للنباتات المجاورة.\r\n2. ضبط التهوية وانتظام الري وتجنب ترطيب الأوراق أثناء التسميد أو الري.'
+          : '📋 Actionable Guidance:\r\n1. Monitor symptom progression daily across adjacent crop rows.\r\n2. Maintain canopy aeration, uniform irrigation, and avoid foliage wetting.',
       fertilizer: isAr
           ? '🌱 سماد NPK متوازن 20-20-20 بمعدل منتظم لدعم حيوية المجموع الخضري والمناعة العامة.'
           : '🌱 Balanced NPK 20-20-20 to support overall vigor and disease tolerance.',
@@ -1830,11 +1821,15 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         _symptomAnalysisNote = customAnalysis;
         _symptomGuidance = customGuidance;
         _customFertilizerAdvice = customFert;
-        _statusMessage = null;
+        _statusMessage = FarmSessionService.canSaveDiagnosis
+            ? null
+            : (isAr
+                  ? 'اكتمل التشخيص محليًا. لا تتوفر صلاحية حفظ السجل أو مزامنته.'
+                  : 'Diagnosis completed locally. Saving and sync permission is unavailable.');
       });
 
       final farmCode = FarmSessionService.currentFarmCode;
-      if (farmCode.isNotEmpty) {
+      if (farmCode.isNotEmpty && FarmSessionService.canSaveDiagnosis) {
         final userProfile = FarmSessionService.currentUserProfile.value;
         unawaited(
           _persistDiagnosisInBackground(
@@ -1888,6 +1883,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     required String diseaseAr,
     required String diseaseEn,
   }) async {
+    if (!FarmSessionService.canSaveDiagnosis) return;
     try {
       await FirebaseFirestore.instance
           .collection('diagnosis_history')
@@ -1944,7 +1940,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       if (treatments.isEmpty) {
         return isAr ? 'لا توجد علاجات مسجّلة' : 'No recorded treatments';
       }
-      return treatments.map((e) => '• $e').join('\n');
+      return treatments.map((e) => '• $e').join('\r\n');
     }
     return treatments.toString();
   }
@@ -1995,8 +1991,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         ),
         content: Text(
           isAr
-              ? 'هل أنت متأكد من حذف سجل التشخيص "$diseaseName"؟\nلا يمكن التراجع عن هذه العملية.'
-              : 'Are you sure you want to delete the diagnosis record "$diseaseName"?\nThis action cannot be undone.',
+              ? 'هل أنت متأكد من حذف سجل التشخيص "$diseaseName"؟\r\nلا يمكن التراجع عن هذه العملية.'
+              : 'Are you sure you want to delete the diagnosis record "$diseaseName"?\r\nThis action cannot be undone.',
           style: const TextStyle(fontSize: 13, height: 1.5),
         ),
         actions: [
@@ -2428,8 +2424,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                                               Expanded(
                                                 child: Text(
                                                   isAr
-                                                      ? 'السماد الموصى به:\n$fert'
-                                                      : 'Recommended Fertilizer:\n$fert',
+                                                      ? 'السماد الموصى به:\r\n$fert'
+                                                      : 'Recommended Fertilizer:\r\n$fert',
                                                   style: TextStyle(
                                                     fontSize: 12,
                                                     color:
@@ -2511,7 +2507,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: const Color(0xFFF7F9F7),
+        backgroundColor: TerraTheme.mist,
         appBar: AppBar(
           title: Text(
             isAr ? 'طبيب النبات والتشخيص الذكي' : 'AI Plant Doctor Diagnosis',
@@ -2531,6 +2527,29 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFE7F0E7),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: TerraTheme.line),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.phone_android_rounded, color: TerraTheme.forest),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        isAr
+                            ? 'يعمل تشخيص الصورة على الجهاز. مزامنة سجل التشخيص تحتاج إلى اتصال وصلاحية.'
+                            : 'Image diagnosis runs on this device. Syncing history requires connection and permission.',
+                        style: const TextStyle(fontSize: 12, height: 1.4),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               // اختيار المحصول يدوياً
               Container(
                 margin: const EdgeInsets.only(bottom: 16),
@@ -2612,6 +2631,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
+                                const Icon(Icons.eco_outlined, size: 38, color: TerraTheme.olive),
+                                const SizedBox(height: 10),
                                 Text(
                                   isAr
                                       ? 'صور الورقة عن قرب للحصول على أعلى دقة'
@@ -2663,8 +2684,10 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                         horizontal: 12,
                       ),
                       color: Colors.white,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 8,
+                        runSpacing: 8,
                         children: [
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
@@ -2685,7 +2708,6 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                             icon: const Icon(Icons.camera_alt, size: 18),
                             label: Text(isAr ? 'كاميرا' : 'Camera'),
                           ),
-                          const SizedBox(width: 8),
                           OutlinedButton.icon(
                             style: OutlinedButton.styleFrom(
                               minimumSize: const Size(0, 36),
@@ -2932,6 +2954,29 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
 
               // 4. بطاقة نتائج التشخيص المتكاملة
               if (_diseaseResult != null) ...[
+                Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: TerraTheme.paper,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: TerraTheme.line),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.offline_bolt_rounded, color: TerraTheme.forest),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          isAr
+                              ? 'نتيجة النموذج محلية واستدلالية؛ راجع مختصًا قبل اتخاذ قرار علاجي.'
+                              : 'This is a local model estimate. Consult an agronomist before treatment decisions.',
+                          style: const TextStyle(fontSize: 12, height: 1.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
                 if (isLowConfidence)
                   Container(
                     padding: const EdgeInsets.all(12),
@@ -2956,8 +3001,8 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                             children: [
                               Text(
                                 isAr
-                                    ? 'تنبيه: دقة قراءة الصورة منخفضة (${(_confidence! * 100).toStringAsFixed(1)}%)'
-                                    : 'Notice: Low image confidence score (${(_confidence! * 100).toStringAsFixed(1)}%)',
+                                    ? 'تنبيه: درجة مطابقة النموذج منخفضة (${(_confidence! * 100).toStringAsFixed(1)}%)'
+                                    : 'Notice: Low model score (${(_confidence! * 100).toStringAsFixed(1)}%)',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color: Colors.amber.shade900,
@@ -3018,7 +3063,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Text(
-                                  '${isAr ? 'دقة' : 'Confidence'}: ${(_confidence! * 100).toStringAsFixed(1)}%',
+                                  '${isAr ? 'درجة النموذج' : 'Model score'}: ${(_confidence! * 100).toStringAsFixed(1)}%',
                                   style: TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.bold,

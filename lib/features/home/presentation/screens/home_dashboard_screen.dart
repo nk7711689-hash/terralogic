@@ -27,7 +27,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   final _tasksCollection = FirebaseFirestore.instance.collection('farm_tasks');
 
   String get _farmCode => FarmSessionService.currentFarmCode;
-  bool get _canManageTasks => FarmSessionService.isManager;
+  bool get _canManageTasks => FarmSessionService.isOwner;
 
   @override
   Widget build(BuildContext context) {
@@ -256,7 +256,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                   ),
                 ),
                 Text(
-                  _farmCode.isEmpty ? 'FARM-DEFAULT' : _farmCode,
+                  _farmCode.isEmpty ? '—' : _farmCode,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -290,12 +290,10 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   Widget _buildOverviewCards(bool isAr) {
-    return Row(
-      children: [
-        Expanded(
-          child: _buildCountCard(
+    final cards = <Widget>[
+      _buildCountCard(
             isAr ? 'طبيب النبات' : 'Plant Doctor',
-            Icons.spa_rounded,
+            Icons.camera_alt_rounded,
             const Color(0xFF2E7D32),
             'diagnosis_history',
             onTap: () {
@@ -307,27 +305,29 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               );
             },
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildCountCard(
+      if (FarmSessionService.isOwner)
+        _buildCountCard(
             isAr ? 'كادر المزرعة' : 'Farm Staff',
             Icons.groups_rounded,
             TerraTheme.blue,
             'workers',
             onTap: () => widget.onNavigateTab(1),
           ),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: _buildCountCard(
+      _buildCountCard(
             isAr ? 'المحاصيل' : 'Crops',
             Icons.eco_rounded,
             TerraTheme.forest,
             'crops',
             onTap: () => widget.onNavigateTab(1),
           ),
-        ),
+    ];
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var index = 0; index < cards.length; index++) ...[
+          if (index > 0) const SizedBox(width: 8),
+          Expanded(child: cards[index]),
+        ],
       ],
     );
   }
