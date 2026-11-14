@@ -358,7 +358,7 @@ class _FarmSettingsScreenState extends State<FarmSettingsScreen> {
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
     final isManager = FarmSessionService.isManager;
-    final canManageFarm = FarmSessionService.isOwner;
+    final canManageFarm = FarmSessionService.isManager;
     final userProfile = FarmSessionService.currentUserProfile.value;
     final farmData = FarmSessionService.currentFarmData.value;
 

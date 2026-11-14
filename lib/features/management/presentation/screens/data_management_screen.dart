@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:terralogic/core/farm_session_service.dart';
 import 'package:terralogic/core/terra_theme.dart';
+import 'package:terralogic/shared/widgets/farm_empty_state.dart';
 
 class DataManagementScreen extends StatefulWidget {
   final bool isArabic;
@@ -181,7 +182,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
             if (_tabController.index == 0) {
               _showAddCropBottomSheet(isAr);
             } else {
-              if (FarmSessionService.isOwner) {
+              if (FarmSessionService.isManager) {
                 _showAddWorkerBottomSheet(isAr);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -205,10 +206,12 @@ class _DataManagementScreenState extends State<DataManagementScreen>
   // --- قسم المحاصيل ---
   Widget _buildCropsView(bool isAr) {
     final farmCode = FarmSessionService.currentFarmCode;
+    if (farmCode.isEmpty) return FarmEmptyState(isArabic: isAr);
+
     final canViewFinancials = FarmSessionService.canViewFinancials;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
-          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          ? const Stream<QuerySnapshot>.empty()
           : FirebaseFirestore.instance
                 .collection('crops')
                 .where('farm_code', isEqualTo: farmCode)
@@ -464,12 +467,16 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                                       ],
                                     ),
                                   ),
-                                  if (FarmSessionService.isOwner)
+                                  if (FarmSessionService.isManager)
                                     PopupMenuItem(
                                       value: 'delete',
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.delete_outline, size: 18, color: Colors.red),
+                                          const Icon(
+                                            Icons.delete_outline,
+                                            size: 18,
+                                            color: Colors.red,
+                                          ),
                                           const SizedBox(width: 8),
                                           Text(isAr ? 'حذف' : 'Delete'),
                                         ],
@@ -500,11 +507,16 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                               "$quantity ${isAr ? 'كغم' : 'kg'}",
                             ),
                             if (canViewFinancials)
-                              _buildInfoMiniItem(isAr ? "التكلفة" : "Cost", "$cost JD"),
+                              _buildInfoMiniItem(
+                                isAr ? "التكلفة" : "Cost",
+                                "$cost JD",
+                              ),
                             if (canViewFinancials)
                               _buildInfoMiniItem(
                                 isAr ? "المبيعات" : "Sales",
-                                sales == 0 ? (isAr ? "لم يبع" : "Not Sold") : "$sales JD",
+                                sales == 0
+                                    ? (isAr ? "لم يبع" : "Not Sold")
+                                    : "$sales JD",
                               ),
                             _buildInfoMiniItem(
                               isAr ? "القطاف" : "Harvest",
@@ -526,7 +538,11 @@ class _DataManagementScreenState extends State<DataManagementScreen>
 
   // --- قسم العمال ---
   Widget _buildWorkersView(bool isAr) {
-    if (!FarmSessionService.isOwner) {
+    if (FarmSessionService.currentFarmCode.isEmpty) {
+      return FarmEmptyState(isArabic: isAr);
+    }
+
+    if (!FarmSessionService.isManager) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(28),
@@ -544,10 +560,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
     final canViewFinancials = FarmSessionService.canViewFinancials;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
-          ? FirebaseFirestore.instance
-                .collection('workers')
-                .limit(0)
-                .snapshots()
+          ? const Stream<QuerySnapshot>.empty()
           : FirebaseFirestore.instance
                 .collection('workers')
                 .where('farm_code', isEqualTo: farmCode)
@@ -642,14 +655,15 @@ class _DataManagementScreenState extends State<DataManagementScreen>
           children: [
             Row(
               children: [
-                if (canViewFinancials) Expanded(
-                  child: _buildMetricCard(
-                    isAr ? "إجمالي العمال" : "Total Workers",
-                    "${workersDocs.length}",
-                    Icons.badge_outlined,
-                    const Color(0xFF2E7D32),
+                if (canViewFinancials)
+                  Expanded(
+                    child: _buildMetricCard(
+                      isAr ? "إجمالي العمال" : "Total Workers",
+                      "${workersDocs.length}",
+                      Icons.badge_outlined,
+                      const Color(0xFF2E7D32),
+                    ),
                   ),
-                ),
                 const SizedBox(width: 10),
                 Expanded(
                   child: _buildMetricCard(
@@ -750,13 +764,22 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                               ],
                             ),
                             const SizedBox(height: 4),
-                            if (canViewFinancials) Text(
-                              "$role · ${isAr ? 'راتب' : 'Salary'} $salaryType: $salary JD",
-                              style: TextStyle(
-                                color: Colors.grey.shade600,
-                                fontSize: 12,
+                            if (canViewFinancials)
+                              Text(
+                                "$role · ${isAr ? 'راتب' : 'Salary'} $salaryType: $salary JD",
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              )
+                            else
+                              Text(
+                                role,
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
                               ),
-                            ) else Text(role, style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
                           ],
                         ),
                       ),
@@ -765,13 +788,8 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                           Icons.more_vert_rounded,
                           color: Colors.grey,
                         ),
-                        onSelected: (value) => _handleWorkerAction(
-                          value,
-                          doc,
-                          name,
-                          notes,
-                          isAr,
-                        ),
+                        onSelected: (value) =>
+                            _handleWorkerAction(value, doc, name, notes, isAr),
                         itemBuilder: (context) => [
                           PopupMenuItem(
                             value: 'details',
@@ -876,7 +894,7 @@ class _DataManagementScreenState extends State<DataManagementScreen>
     String notes,
     bool isAr,
   ) async {
-    final canDelete = FarmSessionService.isOwner;
+    final canDelete = FarmSessionService.isManager;
 
     if (action == 'details') {
       _showNotesDialog(name, notes);
@@ -900,9 +918,11 @@ class _DataManagementScreenState extends State<DataManagementScreen>
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(isAr ? 'حذف المحصول؟' : 'Delete crop?'),
-          content: Text(isAr
-              ? 'سيُحذف سجل المحصول نهائيًا. هل تريد المتابعة؟'
-              : 'This crop record will be permanently deleted. Continue?'),
+          content: Text(
+            isAr
+                ? 'سيُحذف سجل المحصول نهائيًا. هل تريد المتابعة؟'
+                : 'This crop record will be permanently deleted. Continue?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(dialogContext, false),
@@ -948,11 +968,10 @@ class _DataManagementScreenState extends State<DataManagementScreen>
     String notes,
     bool isAr,
   ) async {
-
     if (action == 'details') {
       _showNotesDialog(name, notes);
     } else if (action == 'edit') {
-      if (FarmSessionService.isOwner) {
+      if (FarmSessionService.isManager) {
         _showEditWorkerBottomSheet(isAr, doc);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1438,14 +1457,14 @@ class _DataManagementScreenState extends State<DataManagementScreen>
                     if (nameCtrl.text.trim().isEmpty) return;
                     try {
                       final cropUpdates = <String, dynamic>{
-                            'name': nameCtrl.text.trim(),
-                            'type': selectedType,
-                            'plantDate': plantDateCtrl.text.trim(),
-                            'harvestDate': harvestDateCtrl.text.trim(),
-                            'quantity': _toDouble(qtyCtrl.text),
-                            'status': selectedStatus,
-                            'notes': notesCtrl.text.trim(),
-                          };
+                        'name': nameCtrl.text.trim(),
+                        'type': selectedType,
+                        'plantDate': plantDateCtrl.text.trim(),
+                        'harvestDate': harvestDateCtrl.text.trim(),
+                        'quantity': _toDouble(qtyCtrl.text),
+                        'status': selectedStatus,
+                        'notes': notesCtrl.text.trim(),
+                      };
                       if (FarmSessionService.canViewFinancials) {
                         cropUpdates['cost'] = _toDouble(costCtrl.text);
                         cropUpdates['sales'] = _toDouble(salesCtrl.text);

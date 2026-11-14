@@ -10,9 +10,15 @@ import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:terralogic/core/farm_session_service.dart';
+import 'package:terralogic/core/language_controller.dart';
 import 'package:terralogic/core/notification_service.dart';
 import 'package:terralogic/core/terra_theme.dart';
 import 'package:terralogic/features/ai_plant_doctor/data/plant_disease_service.dart';
+import 'package:terralogic/features/ai_plant_doctor/data/hybrid_smart_notes_service.dart';
+import 'package:terralogic/auth_screens.dart';
+import 'package:terralogic/signup_screen.dart';
+import 'package:terralogic/shared/widgets/terra_drawer.dart';
+import 'package:terralogic/features/weather_climate/presentation/screens/weather_climate_home_screen.dart';
 
 /// قاموس الأمراض الشامل ثنائي اللغة (عربي وإنجليزي) مع خطط التسميد والعلاج المخصصة لكل مرض
 class DiseaseDetail {
@@ -44,23 +50,23 @@ class DiseaseDetail {
 const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
   // ================= 1. حمضيات (Citrus) =================
   'citrus_Sooty Mould': DiseaseDetail(
-    nameAr: 'العفن الهبابي (السخامي) في الحمضيات',
-    nameEn: 'Citrus Sooty Mould',
+    nameAr: 'الهباب الأسود / العفن الأسود (Capnodium spp.)',
+    nameEn: 'Sooty Mould (Capnodium spp.)',
     cropAr: 'حمضيات',
     cropEn: 'Citrus',
     descriptionAr:
-        'طبقة فحمية سوداء تشبه السخام تغطي أسطح الأوراق والأغصان والثمار نتيجة نمو فطريات رمية على الإفرازات العسلية للحشرات الماصة، مما يحجب الضوء ويعطل التمثيل الضوئي.',
+        'تحليل الحالة: طبقة سوداء تشبه السخام على الأوراق والثمار نتيجة إفرازات الحشرات القشرية والمن.',
     descriptionEn:
-        'A dark powdery or velvety fungal layer on foliage and fruit growing on honeydew secreted by sucking insects, blocking sunlight and photosynthesis.',
+        'A black soot-like layer on leaves and fruit caused by honeydew from scale insects and aphids.',
     treatmentsAr: [
-      'مكافحة الحشرات الثاقبة الماصة فوراً (المن، الذبابة البيضاء، البق الدقيقي) بمبيد حشري مناسب (أسيتامبريد أو إيميداكلوبريد)',
-      'غسيل الأشجار بالماء المضغوط مع الصابون الزراعي البوتاسي لإزالة الطبقة السوداء',
-      'رش مبيد نحاسي وقائي خفيف (أوكسي كلوريد النحاس) بعد تنظيف الشجرة لحمايتها',
+      'مكافحة الحشرات الماصة مثل الحشرات القشرية والمن بمبيد حشري مناسب',
+      'غسل الأشجار بالماء والصابون الزراعي لإزالة الطبقة السوداء',
+      'رش مبيد نحاسي مناسب بعد تنظيف الشجرة',
     ],
     treatmentsEn: [
-      'Control honeydew-producing sucking pests immediately (Aphids, Whiteflies, Mealybugs) with Acetamiprid or Imidacloprid',
-      'Wash foliage with pressurized water and potassium agricultural soap to remove soot',
-      'Apply light protective copper spray (Copper Oxychloride) after cleaning',
+      'Control scale insects and aphids with an appropriate registered insecticide',
+      'Wash trees with water and agricultural soap to remove the soot layer',
+      'Apply a suitable copper fungicide after cleaning',
     ],
     fertilizerAr:
         'رش ورقي بالأحماض الأمينية والزنك والحديد المخلبي لتنشيط المجموع الخضري واستعادة كفاءة التمثيل الضوئي.',
@@ -68,23 +74,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Foliar spray with amino acids, chelated iron and zinc to restore vegetative vigor and photosynthetic activity.',
   ),
   'citrus_citrus_canker': DiseaseDetail(
-    nameAr: 'تقرح الحمضيات البكتيري',
-    nameEn: 'Citrus Canker',
+    nameAr: 'تقرح الحمضيات (Xanthomonas citri)',
+    nameEn: 'Citrus Canker (Xanthomonas citri)',
     cropAr: 'حمضيات',
     cropEn: 'Citrus',
     descriptionAr:
-        'مرض بكتيري خطير يسببه Xanthomonas axonopodis، يظهر على شكل بثور وبقع فلينية خشنة بارزة محاطة بهالة صفراء زيتية على الأوراق والسيقان والثمار مسبباً تساقطها وتشوهها.',
+        'تحليل الحالة: بقع فلينية دائرية بارزة على الأوراق والثمار والأغصان تحاط بحلقة صفراء.',
     descriptionEn:
-        'Severe bacterial disease caused by Xanthomonas axonopodis, characterized by raised corky lesions with oily water-soaked margins and yellow halos on leaves and fruit.',
+        'Raised circular corky lesions on leaves, fruit and twigs surrounded by a yellow halo.',
     treatmentsAr: [
-      'رش مركبات النحاس الوقائية (هيدروكسيد النحاس أو أوكسي كلوريد النحاس) مع بدء خروج النموات الحديثة',
-      'تقليم الأفرع والأغصان المصابة بشدة والتخلص منها بالحرق مع تعقيم مقصات التقليم بالكحول',
-      'زراعة مصدات رياح حول البستان لتقليل جروح الرياح التي تنفذ منها البكتيريا',
+      'تقليم الأجزاء المصابة والتخلص منها مع تعقيم أدوات التقليم',
+      'تجنب الري العلوي وتقليل جروح الرياح على النموات',
+      'استخدام مبيدات نحاسية وقائية معتمدة',
     ],
     treatmentsEn: [
-      'Apply preventative copper sprays (Copper Hydroxide or Oxychloride) during new flushes',
-      'Prune and destroy heavily infected twigs, sanitizing shears between cuts',
-      'Establish windbreaks around orchards to minimize wind-driven leaf injuries',
+      'Prune and destroy infected parts, sanitizing tools between cuts',
+      'Avoid overhead irrigation and reduce wind injury to new growth',
+      'Use approved preventative copper products',
     ],
     fertilizerAr:
         'تسميد متوازن وتجنب الإفراط في النيتروجين الذي يولد نموات غضة ضعيفة المقاومة.',
@@ -92,7 +98,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Balanced NPK regime; avoid excessive quick-release nitrogen that produces succulent vulnerable tissues.',
   ),
   'citrus_healthy': DiseaseDetail(
-    nameAr: 'أشجار حمضيات سليمة',
+    nameAr: 'حمضيات سليم وخالٍ من الأمراض',
     nameEn: 'Healthy Citrus',
     cropAr: 'حمضيات',
     cropEn: 'Citrus',
@@ -116,7 +122,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
 
   // ================= 2. زيتون (Olive) =================
   'olive_healthy': DiseaseDetail(
-    nameAr: 'أشجار زيتون سليمة',
+    nameAr: 'زيتون سليم وخالٍ من الأمراض',
     nameEn: 'Healthy Olive',
     cropAr: 'زيتون',
     cropEn: 'Olive',
@@ -138,23 +144,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Winter compost and superphosphate, followed by spring foliar Boron to boost fruit set.',
   ),
   'olive_peacock_spot': DiseaseDetail(
-    nameAr: 'مرض عين الطاووس في الزيتون',
-    nameEn: 'Olive Peacock Spot',
+    nameAr: 'عين الطاووس / تبقع أوراق الزيتون (Spilocaea oleagina)',
+    nameEn: 'Peacock Spot / Leaf Spot (Spilocaea oleagina)',
     cropAr: 'زيتون',
     cropEn: 'Olive',
     descriptionAr:
-        'مرض فطري يسببه Spilocaea oleaginea، تظهر بقع دائرية مميزة تشبه ريش عين الطاووس بهالات متحدة المركز بلون بني ورمادي مصفر على الأوراق تؤدي إلى تساقط كثيف للأوراق وضعف الشجرة.',
+        'تحليل الحالة: بقع دائرية على الأوراق تشبه ريش عين الطاووس تؤدي للاصفرار وتساقط الأوراق المبكر.',
     descriptionEn:
-        'Fungal leaf spot caused by Spilocaea oleaginea, producing distinctive target-like concentric circles (peacock eyes) on leaves, leading to severe defoliation.',
+        'Circular peacock-eye spots on leaves causing yellowing and premature leaf drop.',
     treatmentsAr: [
-      'رش وقائي بمركبات النحاس (محلول بوردو أو أوكسي كلوريد النحاس) في الخريف وبداية الربيع قبل هطول الأمطار',
-      'تقليم الأفرع المتشابكة والسفلية لتحسين التهوية وخفض الرطوبة داخل الشجرة',
-      'جمع الأوراق المصابة المتساقطة على الأرض والتخلص منها لتقليل مصدر العدوى',
+      'رش مبيد نحاسي في الخريف والربيع بعد قطاف الثمار',
+      'تحسين تهوية الشجرة بالتقليم',
+      'جمع الأوراق المصابة والتخلص منها لتقليل مصدر العدوى',
     ],
     treatmentsEn: [
-      'Preventative copper sprays (Bordeaux mixture or Copper Oxychloride) in autumn and early spring',
-      'Prune dense branches to enhance airflow and sunlight penetration',
-      'Collect and destroy fallen infected leaves to eradicate inoculum sources',
+      'Apply copper fungicide in autumn and spring after harvest',
+      'Prune dense branches to improve airflow',
+      'Collect and destroy fallen infected leaves',
     ],
     fertilizerAr:
         'التسميد بالبوتاسيوم لتقوية جدران الخلايا، وتجنب الإفراط في النيتروجين في الخريف.',
@@ -164,23 +170,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
 
   // ================= 3. بطاطس (Potato) =================
   'potato_Early_Blight': DiseaseDetail(
-    nameAr: 'اللفحة المبكرة في البطاطس',
-    nameEn: 'Potato Early Blight',
+    nameAr: 'اللفحة المبكرة / حُرقة الورق (Alternaria solani)',
+    nameEn: 'Early Blight (Alternaria solani)',
     cropAr: 'بطاطس',
     cropEn: 'Potato',
     descriptionAr:
-        'مرض فطري يسببه Alternaria solani، يظهر على شكل بقع بنية داكنة ذات حلقات دائرية متحدة المركز (عين الهدف) على الأوراق السفلية أولاً، وتؤدي إلى اصفرار الأوراق وموتها وضعف نمو الدرنات.',
+        'تحليل الحالة: بقع بنية داكنة ذات حلقات متداخلة على الأوراق السفلية أولاً تسبب جفافها.',
     descriptionEn:
-        'Fungal disease caused by Alternaria solani, characterized by dark brown circular spots with concentric target-board rings on older foliage.',
+        'Dark brown overlapping-ring spots begin on lower leaves and cause them to dry.',
     treatmentsAr: [
-      'رش مبيد فطري وقائي أو علاجي (دايفينوكونازول، مانكوزيب، أو أزوكسيستروبين)',
-      'التخلص من بقايا النباتات المصابة وتدوير المحاصيل مع نباتات غير باذنجانية',
-      'تنظيم الري واستخدام الري بالتنقيط لتجنب ترطيب الأوراق',
+      'إزالة الأوراق المصابة والتخلص من بقايا النباتات',
+      'تنظيم الري واستخدام الري بالتنقيط',
+      'استخدام مبيدات فطرية وقائية أو علاجية متوفرة محلياً',
     ],
     treatmentsEn: [
-      'Spray targeted fungicides (Difenoconazole, Mancozeb, or Azoxystrobin)',
-      'Destroy infected crop residues and rotate with non-solanaceous crops',
-      'Employ drip irrigation to prevent foliage wetting',
+      'Remove infected leaves and crop residues',
+      'Use regulated irrigation and drip irrigation where possible',
+      'Apply locally registered protective or curative fungicides',
     ],
     fertilizerAr:
         'تسميد بوتاسيوم عالي لرفع متانة الأوراق ومقاومة الفطريات + كالسيوم لتحسين جودة الدرنات.',
@@ -188,23 +194,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'High potassium feeding for tissue resistance + Calcium for tuber peel strength.',
   ),
   'potato_Late_blight': DiseaseDetail(
-    nameAr: 'اللفحة المتأخرة في البطاطس',
-    nameEn: 'Potato Late Blight',
+    nameAr: 'اللفحة المتأخرة / العفن السري (Phytophthora infestans)',
+    nameEn: 'Late Blight (Phytophthora infestans)',
     cropAr: 'بطاطس',
     cropEn: 'Potato',
     descriptionAr:
-        'مرض وبائي خطير يسببه شبه الفطر Phytophthora infestans، يسبب بقعاً مائية رمادية إلى بنية داكنة سريعة الانتشار على الأوراق والسيقان مع زغب أبيض خفيف على السطح السفلي في الطقس الرطب والبارد.',
+        'تحليل الحالة: بقع مائية سريعة الانتشار تتحول للبني الداكن في الجو البارد والرطب وتصيب الأوراق والدرنات.',
     descriptionEn:
-        'Aggressive oomycete pathogen (Phytophthora infestans) causing rapid water-soaked dark lesions, white underside sporulation, and devastating vine kill.',
+        'Rapid water-soaked lesions turn dark brown in cool, wet weather and affect leaves and tubers.',
     treatmentsAr: [
-      'التدخل الفوري بمبيد جهازي قوي (سيموكسانيل + مانكوزيب، أو ميتالاكسيل، أو بروباموكارب)',
-      'التخلص الفوري من النباتات المصابة بشدة ودفنها بعيداً لمنع انتشار العدوى',
-      'التوقف الفوري عن الري العلوي وخفض الرطوبة قدر الإمكان',
+      'رش مبيدات فطرية جهازية ونحاسية معتمدة',
+      'التخلص من النباتات المصابة بشدة بعيداً عن الحقل',
+      'تجنب الإفراط في الرطوبة والري العلوي',
     ],
     treatmentsEn: [
-      'Urgent intervention with systemic fungicides (Cymoxanil + Mancozeb, Metalaxyl, or Propamocarb)',
-      'Rogue out severely diseased plants and eliminate cull piles',
-      'Avoid overhead irrigation and reduce field moisture',
+      'Apply approved systemic and copper fungicides',
+      'Remove severely infected plants away from the field',
+      'Avoid excess moisture and overhead irrigation',
     ],
     fertilizerAr:
         'رش فوسفيت البوتاسيوم لتحفيز المناعة الجهازية المكتسبة داخل أنسجة النبات.',
@@ -212,7 +218,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Potassium Phosphite foliar applications to trigger systemic acquired resistance (SAR).',
   ),
   'potato_healthy': DiseaseDetail(
-    nameAr: 'نبات بطاطس سليم',
+    nameAr: 'بطاطس سليم وخالٍ من الأمراض',
     nameEn: 'Healthy Potato',
     cropAr: 'بطاطس',
     cropEn: 'Potato',
@@ -236,23 +242,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
 
   // ================= 4. طماطم (Tomato) =================
   'tomato_early_blight': DiseaseDetail(
-    nameAr: 'اللفحة المبكرة في الطماطم (البندورة)',
-    nameEn: 'Tomato Early Blight',
+    nameAr: 'اللفحة المبكرة / حُرقة الورق (Alternaria solani)',
+    nameEn: 'Early Blight (Alternaria solani)',
     cropAr: 'طماطم',
     cropEn: 'Tomato',
     descriptionAr:
-        'مرض فطري يسببه Alternaria solani، يبدأ كبقع بنية صغيرة على الأوراق القديمة وتتوسع لتشكل حلقات دائرية متحدة المركز وهالات صفراء، مسببة جفاف الأوراق وسقوطها.',
+        'تحليل الحالة: بقع دائرية بنية على الأوراق القديمة مع حلقات تشبه الهدف وتؤدي لتساقطها.',
     descriptionEn:
-        'Fungal pathogen (Alternaria solani) producing dark brown concentric rings surrounded by yellow halos on lower tomato foliage.',
+        'Brown circular spots with target-like rings on old leaves cause premature leaf drop.',
     treatmentsAr: [
-      'إزالة الأوراق السفلية المصابة والملامسة للتربة (التوريق الوقائي)',
-      'رش مبيد فطري كلوروثالونيل أو دايفينوكونازول أو أزوكسيستروبين',
-      'تجنب الري الرذاذي العلوي والاعتماد على الري بالتنقيط',
+      'تنظيم الري والتسميد المتوازن',
+      'الرش بمبيد فطري مناسب مثل Chlorothalonil',
+      'إزالة الأوراق المصابة وتحسين نظافة الحقل',
     ],
     treatmentsEn: [
-      'Prune off diseased lower soil-touching leaves',
-      'Apply Chlorothalonil, Difenoconazole, or Azoxystrobin fungicide',
-      'Use drip irrigation instead of sprinkler systems to keep foliage dry',
+      'Regulate irrigation and use balanced fertilization',
+      'Apply a suitable fungicide such as Chlorothalonil',
+      'Remove infected leaves and improve field sanitation',
     ],
     fertilizerAr:
         'سماد NPK عالي البوتاسيوم 12-12-36 مع كالسيوم بورون لتقوية النبات وجدران الخلايا.',
@@ -260,8 +266,8 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'High-potassium NPK 12-12-36 combined with Calcium-Boron for cell wall fortitude.',
   ),
   'tomato_healthy': DiseaseDetail(
-    nameAr: 'نبات طماطم (بندورة) سليم',
-    nameEn: 'Healthy Tomato Plant',
+    nameAr: 'طماطم (بندورة) سليم وخالٍ من الأمراض',
+    nameEn: 'Healthy Tomato',
     cropAr: 'طماطم',
     cropEn: 'Tomato',
     descriptionAr:
@@ -282,23 +288,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Balanced progressive NPK regime tailored to stage (High-P roots, 20-20-20 growth, High-K fruit sizing).',
   ),
   'tomato_late_blight': DiseaseDetail(
-    nameAr: 'اللفحة المتأخرة في الطماطم (البندورة)',
-    nameEn: 'Tomato Late Blight',
+    nameAr: 'اللفحة المتأخرة / الندوة المتأخرة (Phytophthora infestans)',
+    nameEn: 'Late Blight (Phytophthora infestans)',
     cropAr: 'طماطم',
     cropEn: 'Tomato',
     descriptionAr:
-        'مرض وبائي مائي شرس يسببه Phytophthora infestans، يصيب الأوراق والسيقان بمسحات مائية بنية داكنة سريعة الانتشار مع عفن مائي مسود على الثمار الخضراء في الطقس البارد الرطب.',
+        'تحليل الحالة: بقع رمادية مائية على الأوراق والسيقان والثمار تتسع بسرعة في الرطوبة العالية.',
     descriptionEn:
-        'Highly destructive water-mold disease causing rapidly spreading water-soaked dark lesions, white fungal growth under leaves, and rotting fruit.',
+        'Rapidly expanding gray water-soaked lesions affect leaves, stems and fruit in high humidity.',
     treatmentsAr: [
-      'رش فوري بمبيدات جهازية متخصصة (مانكوزيب + سيموكسانيل أو ميتالاكسيل أو ديميثومورف)',
-      'تهوية البيوت المحمية فوراً وخفض الرطوبة النسبية إلى أقل من 80%',
-      'التخلص من الثمار والأوراق المصابة بحرص خارج المزرعة',
+      'استخدام مبيدات فطرية وقائية وعلاجية معتمدة',
+      'تحسين التهوية في البيوت البلاستيكية وخفض الرطوبة',
+      'إزالة الثمار والأوراق المصابة خارج المزرعة',
     ],
     treatmentsEn: [
-      'Urgent foliar spray with systemic fungicides (Mancozeb + Cymoxanil, Metalaxyl, or Dimethomorph)',
-      'Ventilate greenhouses immediately to lower relative humidity below 80%',
-      'Cull and dispose of all infected fruit and foliage safely away from fields',
+      'Apply approved protective and curative fungicides',
+      'Improve greenhouse ventilation and reduce humidity',
+      'Remove infected fruit and foliage away from the farm',
     ],
     fertilizerAr:
         'سقاية فوسفيت البوتاسيوم لتحفيز الدفاعات الذاتية وتجنب إضافة أي سماد نيتروجيني حر أثناء الإصابة.',
@@ -308,23 +314,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
 
   // ================= 5. قمح (Wheat) =================
   'wheat_Brown_Rust': DiseaseDetail(
-    nameAr: 'صدأ الأوراق (الصدأ البني) في القمح',
-    nameEn: 'Wheat Brown Rust (Leaf Rust)',
+    nameAr: 'الصدأ البني / صدأ الأوراق (Puccinia triticina)',
+    nameEn: 'Brown Rust / Leaf Rust (Puccinia triticina)',
     cropAr: 'قمح',
     cropEn: 'Wheat',
     descriptionAr:
-        'مرض فطري يسببه Puccinia triticina، تظهر بثرات دائرية صغيرة بلون بني محمر أو برتقالي مبعثرة عشوائياً على أنصال الأوراق تطلق مسحوقاً برتقالياً عند لمسها، وتؤدي لجفاف الأوراق وموتها قبل امتلاء الحبوب.',
+        'تحليل الحالة: بثور بنية مسحوقية صغيرة على سطح الأوراق العليا والسفلى تشبه الصدأ.',
     descriptionEn:
-        'Fungal leaf rust caused by Puccinia triticina, producing scattered round red-orange pustules on leaf blades that reduce grain fill and yield.',
+        'Small powdery brown pustules on upper and lower leaf surfaces resemble rust.',
     treatmentsAr: [
-      'رش مبيد فطري جهازي من مجموعة التريازول (تيبوكونازول أو بروبيكونازول) عند أول ظهور للبثرات',
-      'زراعة الأصناف المعتمدة المقاومة للصدأ',
-      'التخلص من حشائش الحقول والنجيليات البرية المضيفة للفطر',
+      'استخدام أصناف قمح مقاومة ومعتمدة',
+      'الرش بمبيد فطري متخصص عند بداية الإصابة',
+      'مراقبة الحقل والتدخل عند انتشار البثور',
     ],
     treatmentsEn: [
-      'Apply systemic triazole fungicide (Tebuconazole or Propiconazole) at first sign of pustules',
-      'Plant certified rust-resistant wheat cultivars',
-      'Eradicate volunteer cereal grasses acting as secondary hosts',
+      'Plant certified rust-resistant cultivars',
+      'Apply a specialized fungicide when symptoms first appear',
+      'Scout the field and intervene when pustules spread',
     ],
     fertilizerAr:
         'تسميد فوسفاتي وبوتاسي متوازن لدعم صلابة السيقان، وعدم الإفراط في التسميد الآزوتي المتأخر.',
@@ -332,7 +338,7 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Balanced phosphate and potash to support stem strength; avoid late excessive nitrogen bursts.',
   ),
   'wheat_healthy': DiseaseDetail(
-    nameAr: 'حقل قمح سليم',
+    nameAr: 'قمح سليم وخالٍ من الأمراض',
     nameEn: 'Healthy Wheat',
     cropAr: 'قمح',
     cropEn: 'Wheat',
@@ -354,23 +360,23 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
         'Split nitrogen fertilization schedule (planting, tillering, heading) fortified with Zinc sulfate.',
   ),
   'wheat_yellow_rust': DiseaseDetail(
-    nameAr: 'الصدأ الأصفر (الصدأ المخطط) في القمح',
-    nameEn: 'Wheat Yellow Rust (Stripe Rust)',
+    nameAr: 'الصدأ الأصفر / الصدأ الخطي (Puccinia striiformis)',
+    nameEn: 'Yellow Rust / Stripe Rust (Puccinia striiformis)',
     cropAr: 'قمح',
     cropEn: 'Wheat',
     descriptionAr:
-        'مرض وبائي خطير جداً يسببه Puccinia striiformis، يظهر على شكل بثرات صفراء ليمونية دقيقة مصطفة في خطوط طولية متوازية على طول عروق الورقة تشبه الخطوط الملونة، وينتشر بسرعة في الأجواء الباردة والرطبة مسبباً خسائر جسيمة.',
+        'تحليل الحالة: خطوط صفراء طولية متتالية من البثور على أوراق القمح في الأجواء الباردة الرطبة.',
     descriptionEn:
-        'Devastating stripe rust caused by Puccinia striiformis, exhibiting bright yellow pustules arranged in distinct linear stripes along leaf veins in cool humid weather.',
+        'Yellow longitudinal rows of pustules on wheat leaves in cool, humid weather.',
     treatmentsAr: [
-      'الرش الفوري والشامل بمبيد فطري جهازي متخصص (تيبوكونازول، إيبوكسيكونازول، أو أزوكسيستروبين مع بروبيكونازول)',
-      'الاستجابة السريعة فور ظهور أي بؤرة صفراء في الحقل لمنع انتشار الوباء',
-      'اختيار أصناف قمح ذات مقاومة وراثية عالية للأصداء الصفراء',
+      'زراعة أصناف قمح معتمدة ومقاومة',
+      'التدخل بالمبيدات الفطرية عند انتشار الإصابة',
+      'مراقبة الحقل والتدخل المبكر عند ظهور الخطوط الصفراء',
     ],
     treatmentsEn: [
-      'Urgent whole-field spraying with high-efficacy systemic triazole/strobilurin fungicides',
-      'Act rapidly upon spotting the earliest yellow foci to prevent epidemic surges',
-      'Select genetics with proven stripe rust resistance genes',
+      'Plant certified, resistant wheat cultivars',
+      'Apply fungicides when the infection begins to spread',
+      'Scout the field and intervene early when yellow stripes appear',
     ],
     fertilizerAr:
         'رش ورقي بسلفات البوتاسيوم لتعزيز سماكة جدر الخلايا وتجنب المغالاة في التسميد النيتروجيني.',
@@ -1151,14 +1157,26 @@ const Map<String, DiseaseDetail> kPlantDiseasesBilingual = {
 };
 
 class PlantDoctorScreen extends StatefulWidget {
-  final bool isArabic;
-  const PlantDoctorScreen({super.key, this.isArabic = true});
+  final bool? isArabic;
+  final bool openDiagnosisOnStart;
+
+  const PlantDoctorScreen({
+    super.key,
+    this.isArabic,
+    this.openDiagnosisOnStart = false,
+  });
 
   @override
   State<PlantDoctorScreen> createState() => _PlantDoctorScreenState();
 }
 
 class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
+  static const double _minimumConfidence = 0.5;
+  static const _charcoal = Colors.white;
+  static const _panel = Colors.white;
+  static const _mint = Color(0xFF173B32);
+  static const _sage = Color(0xFF215C45);
+
   File? _image;
   final ImagePicker _picker = ImagePicker();
   final TextEditingController _notesController = TextEditingController();
@@ -1166,6 +1184,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   Interpreter? _interpreter;
   List<String> _labels = [];
   bool _isClassifying = false;
+  bool _showDiagnosisTools = false;
   String? _statusMessage;
   double? _confidence;
 
@@ -1181,11 +1200,11 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   String _selectedCropType = 'Auto';
   final List<String> _cropOptions = [
     'Auto',
-    'Tomato',
-    'Potato',
-    'Olive',
-    'Wheat',
     'Citrus',
+    'Olive',
+    'Potato',
+    'Tomato',
+    'Wheat',
   ];
 
   final Map<String, String> _cropTranslations = {
@@ -1199,6 +1218,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
   @override
   void initState() {
     super.initState();
+    _showDiagnosisTools = widget.openDiagnosisOnStart;
     _loadModelAndLabels();
   }
 
@@ -1253,7 +1273,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       _labels = [];
       if (!mounted) return;
       setState(() {
-        _statusMessage = widget.isArabic
+        _statusMessage = (widget.isArabic ?? AppLanguage.isArabic.value)
             ? 'تعذر تحميل النموذج: $e'
             : 'Failed to load model: $e';
       });
@@ -1276,6 +1296,26 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     });
 
     await _classifyAndDiagnose();
+  }
+
+  void _closeDiagnosis() {
+    if (widget.openDiagnosisOnStart) {
+      Navigator.of(context).pop();
+      return;
+    }
+
+    setState(() {
+      _showDiagnosisTools = false;
+      _image = null;
+      _diseaseResult = null;
+      _confidence = null;
+      _statusMessage = null;
+      _symptomCategoryTitle = null;
+      _symptomAnalysisNote = null;
+      _symptomGuidance = null;
+      _customFertilizerAdvice = null;
+      _notesController.clear();
+    });
   }
 
   /// محرك ذكي تفاعلي لتحليل ملاحظات المزارع (المدة، ثبات الحجم، الرطوبة، التزهير، ونقص العناصر)
@@ -1644,7 +1684,7 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
 
   Future<void> _classifyAndDiagnose() async {
     if (_isClassifying) return;
-    final isAr = widget.isArabic;
+    final isAr = widget.isArabic ?? AppLanguage.isArabic.value;
 
     if (_interpreter == null) {
       await _loadModelAndLabels();
@@ -1675,6 +1715,11 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
           ? '🌿 جاري التعرف على نوع المحصول...'
           : '🌿 Identifying the crop type...';
       _diseaseResult = null;
+      _confidence = null;
+      _symptomCategoryTitle = null;
+      _symptomAnalysisNote = null;
+      _symptomGuidance = null;
+      _customFertilizerAdvice = null;
     });
 
     try {
@@ -1730,6 +1775,23 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       }
       final maxVal = result[diseaseIndex];
       final diseaseRawKey = _labels[diseaseIndex];
+
+      if (maxVal < _minimumConfidence) {
+        if (mounted) {
+          setState(() {
+            _confidence = maxVal;
+            _diseaseResult = null;
+            _statusMessage = isAr
+                ? 'عذراً، الصورة غير واضحة بما يكفي للتشخيص الدقيق '
+                      '(${(maxVal * 100).toStringAsFixed(1)}%). '
+                      'الرجاء التقاط صورة أقرب وأوضح للورقة.'
+                : 'Sorry, the image is not clear enough for an accurate diagnosis '
+                      '(${(maxVal * 100).toStringAsFixed(1)}%). '
+                      'Please take a closer, clearer photo of the leaf.';
+          });
+        }
+        return;
+      }
 
       // ======= Step 2: Disease Detection =======
       if (mounted) {
@@ -1791,6 +1853,10 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         diseaseAr = finalData['name']?.toString() ?? diseaseRawKey;
         diseaseEn = finalData['name']?.toString() ?? diseaseRawKey;
       }
+      final displayName = _selectedCropType == 'Auto'
+          ? (isAr ? '$cropNameAr - $diseaseAr' : '$cropNameEn - $diseaseEn')
+          : (isAr ? diseaseAr : diseaseEn);
+      finalData['display_name'] = displayName;
 
       String? customCategory;
       String? customAnalysis;
@@ -1810,6 +1876,55 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
           (finalData['treatments'] as List).insert(0, noteResult.treatment);
         }
       }
+
+      HybridNoteResult? smartNoteResult;
+      if (_notesController.text.trim().isNotEmpty) {
+        final noteCrop = _selectedCropType == 'Auto'
+            ? detectedCrop
+            : _selectedCropType;
+        smartNoteResult = await HybridSmartNotesService.analyze(
+          note: _notesController.text.trim(),
+          localAnalysis: customAnalysis ?? '',
+          language: isAr ? 'ar' : 'en',
+          crop: noteCrop,
+          diseaseKey: diseaseRawKey,
+        );
+        if (smartNoteResult.recommendation.trim().isNotEmpty) {
+          customAnalysis = smartNoteResult.recommendation;
+          if (mounted) {
+            setState(() {
+              _symptomAnalysisNote = customAnalysis;
+              _statusMessage = smartNoteResult!.online
+                  ? (isAr
+                        ? 'تم تحليل الملاحظة ذكياً عبر الإنترنت'
+                        : 'The note was analyzed online')
+                  : (isAr
+                        ? 'تم حفظ الملاحظة وتحليلها محلياً'
+                        : 'The note was saved and analyzed locally');
+            });
+          }
+        }
+      }
+
+      final localRecord = {
+        'farm_code': FarmSessionService.currentFarmCode,
+        'user_uid': FirebaseAuth.instance.currentUser?.uid ?? '',
+        'disease_name_ar': diseaseAr,
+        'disease_name_en': diseaseEn,
+        'crop_name_ar': cropNameAr,
+        'crop_name_en': cropNameEn,
+        'disease_raw_key': diseaseRawKey,
+        'display_name': displayName,
+        'confidence': maxVal,
+        'notes': _notesController.text.trim(),
+        'note_category': customCategory,
+        'note_analysis': customAnalysis,
+        'note_guidance': customGuidance,
+        'smart_note_recommendation': smartNoteResult?.recommendation ?? '',
+        'smart_note_online': smartNoteResult?.online ?? false,
+        'created_at': DateTime.now().toIso8601String(),
+      };
+      unawaited(HybridSmartNotesService.saveLocal(record: localRecord));
 
       // حفظ التشخيص تلقائياً في السجل التاريخي لقاعدة البيانات
       // Render the local diagnosis before starting optional Firebase work.
@@ -1841,10 +1956,14 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
               'disease_name_ar': diseaseAr,
               'disease_name_en': diseaseEn,
               'disease_raw_key': diseaseRawKey,
+              'display_name': displayName,
               'confidence': maxVal,
               'notes': _notesController.text.trim(),
               'note_category': customCategory,
               'note_analysis': customAnalysis,
+              'smart_note_recommendation':
+                  smartNoteResult?.recommendation ?? '',
+              'smart_note_online': smartNoteResult?.online ?? false,
               'note_guidance': customGuidance,
               'fertilizer': customFert ?? finalData['fertilizer'],
               'treatments': finalData['treatments'],
@@ -2143,310 +2262,400 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                   ),
                 const Divider(height: 8),
                 Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: FirebaseFirestore.instance
-                        .collection('diagnosis_history')
-                        .where(
-                          'farm_code',
-                          isEqualTo: farmCode.isEmpty
-                              ? 'FARM-DEFAULT'
-                              : farmCode,
-                        )
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: CircularProgressIndicator(
-                            color: Color(0xFF2E7D32),
-                          ),
-                        );
-                      }
-
-                      var docs = snapshot.hasData ? snapshot.data!.docs : [];
-
-                      // ترتيب تنازلي حسب التاريخ (الأحدث أولاً)
-                      docs.sort((a, b) {
-                        final aTime =
-                            (a.data() as Map<String, dynamic>)['createdAt']
-                                as Timestamp?;
-                        final bTime =
-                            (b.data() as Map<String, dynamic>)['createdAt']
-                                as Timestamp?;
-                        if (aTime == null && bTime == null) return 0;
-                        if (aTime == null) return 1;
-                        if (bTime == null) return -1;
-                        return bTime.compareTo(aTime);
-                      });
-
-                      if (docs.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.history_rounded,
-                                size: 56,
-                                color: Colors.grey.shade300,
-                              ),
-                              const SizedBox(height: 12),
-                              Text(
-                                isAr
-                                    ? 'لا توجد فحوصات سابقة مسجلة'
-                                    : 'No recorded scan history yet',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.grey.shade500,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                isAr
-                                    ? 'التقط صورة نبات لبدء التشخيص'
-                                    : 'Snap a plant photo to start diagnosing',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade400,
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }
-
-                      return ListView.builder(
-                        itemCount: docs.length,
-                        itemBuilder: (context, idx) {
-                          final doc = docs[idx];
-                          final docId = doc.id;
-                          final d = doc.data() as Map<String, dynamic>;
-                          final diseaseName = isAr
-                              ? (d['disease_name_ar'] ??
-                                    d['disease_raw_key'] ??
-                                    '')
-                              : (d['disease_name_en'] ??
-                                    d['disease_raw_key'] ??
-                                    '');
-                          final crop = isAr
-                              ? (d['crop_name_ar'] ?? 'محصول')
-                              : (d['crop_name_en'] ?? 'Crop');
-                          final double conf = (d['confidence'] is num)
-                              ? (d['confidence'] as num).toDouble()
-                              : 0.0;
-                          final notes = d['notes']?.toString() ?? '';
-                          final fert = d['fertilizer']?.toString() ?? '';
-                          final Timestamp? ts = d['createdAt'] as Timestamp?;
-                          final bool isHealthy =
-                              (d['disease_raw_key']?.toString() ?? '').contains(
-                                'healthy',
-                              );
-                          final docCreatorName =
-                              d['created_by_name']?.toString() ?? '';
-
-                          final hasDeletePermission = canDelete;
-
-                          String dateStr = '';
-                          if (ts != null) {
-                            final dt = ts.toDate();
-                            dateStr =
-                                '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')} '
-                                '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                  child: Column(
+                    children: [
+                      FutureBuilder<List<Map<String, dynamic>>>(
+                        future: HybridSmartNotesService.loadLocal(
+                          userUid: FirebaseAuth.instance.currentUser?.uid ?? '',
+                        ),
+                        builder: (context, localSnapshot) {
+                          final localRecords = localSnapshot.data ?? [];
+                          if (localRecords.isEmpty) {
+                            return const SizedBox.shrink();
                           }
-
-                          return Card(
-                            elevation: 0,
-                            margin: const EdgeInsets.only(bottom: 10),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                              side: BorderSide(
-                                color: isHealthy
-                                    ? Colors.green.shade200
-                                    : Colors.orange.shade200,
-                              ),
-                            ),
-                            child: ExpansionTile(
-                              leading: Container(
-                                padding: const EdgeInsets.all(8),
-                                decoration: BoxDecoration(
-                                  color: isHealthy
-                                      ? const Color(0xFFE8F5E9)
-                                      : Colors.orange.shade50,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                child: Icon(
-                                  isHealthy
-                                      ? Icons.check_circle_outline_rounded
-                                      : Icons.spa_rounded,
-                                  color: isHealthy
-                                      ? const Color(0xFF2E7D32)
-                                      : Colors.orange.shade800,
-                                  size: 22,
-                                ),
-                              ),
-                              title: Text(
-                                '$crop: $diseaseName',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 13.5,
-                                ),
-                              ),
-                              subtitle: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    '$dateStr · ${isAr ? 'دقة' : 'Conf'}: ${(conf * 100).toStringAsFixed(0)}%',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.grey.shade600,
+                          return Container(
+                            constraints: const BoxConstraints(maxHeight: 150),
+                            margin: const EdgeInsets.only(bottom: 8),
+                            child: ListView.builder(
+                              shrinkWrap: true,
+                              itemCount: localRecords.length > 3
+                                  ? 3
+                                  : localRecords.length,
+                              itemBuilder: (context, index) {
+                                final record = localRecords[index];
+                                final crop = isAr
+                                    ? record['crop_name_ar'] ?? 'محصول'
+                                    : record['crop_name_en'] ?? 'Crop';
+                                final disease = isAr
+                                    ? record['disease_name_ar'] ??
+                                          record['disease_raw_key'] ??
+                                          ''
+                                    : record['disease_name_en'] ??
+                                          record['disease_raw_key'] ??
+                                          '';
+                                final recommendation =
+                                    record['smart_note_recommendation']
+                                        ?.toString() ??
+                                    '';
+                                final wasOnline =
+                                    record['smart_note_online'] == true;
+                                return Card(
+                                  margin: const EdgeInsets.only(bottom: 6),
+                                  color: Colors.blue.shade50,
+                                  child: ListTile(
+                                    dense: true,
+                                    leading: Icon(
+                                      wasOnline
+                                          ? Icons.cloud_done_rounded
+                                          : Icons.offline_bolt_rounded,
+                                      color: wasOnline
+                                          ? Colors.green
+                                          : Colors.blueGrey,
+                                    ),
+                                    title: Text(
+                                      '$crop: $disease',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    subtitle: Text(
+                                      recommendation.isEmpty
+                                          ? (isAr
+                                                ? 'محفوظ محلياً'
+                                                : 'Saved locally')
+                                          : recommendation,
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  if (docCreatorName.isNotEmpty)
-                                    Text(
-                                      '${isAr ? 'بواسطة' : 'by'}: $docCreatorName',
-                                      style: TextStyle(
-                                        fontSize: 10,
-                                        color: Colors.grey.shade500,
-                                      ),
-                                    ),
-                                ],
-                              ),
-                              // ===== زر الحذف =====
-                              trailing: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  if (hasDeletePermission)
-                                    IconButton(
-                                      icon: const Icon(
-                                        Icons.delete_outline_rounded,
-                                        color: Colors.red,
-                                        size: 20,
-                                      ),
-                                      tooltip: isAr
-                                          ? 'حذف هذا السجل'
-                                          : 'Delete record',
-                                      onPressed: () => _deleteDiagnosisRecord(
-                                        sheetCtx,
-                                        docId,
-                                        isAr,
-                                        '$crop: $diseaseName',
-                                      ),
-                                    )
-                                  else
-                                    IconButton(
-                                      icon: Icon(
-                                        Icons.lock_outline_rounded,
-                                        color: Colors.grey.shade400,
-                                        size: 18,
-                                      ),
-                                      tooltip: isAr
-                                          ? 'لا تملك الصلاحية لحذف هذا السجل'
-                                          : 'You do not have permission to delete this record',
-                                      onPressed: () {
-                                        ScaffoldMessenger.of(
-                                          context,
-                                        ).showSnackBar(
-                                          SnackBar(
-                                            content: Text(
-                                              isAr
-                                                  ? '🔒 لا تملك الصلاحية لحذف هذا السجل'
-                                                  : '🔒 You do not have permission to delete this record',
-                                            ),
-                                            backgroundColor:
-                                                Colors.orange.shade800,
-                                          ),
-                                        );
-                                      },
-                                    ),
-                                  const Icon(
-                                    Icons.expand_more_rounded,
-                                    color: Colors.grey,
-                                    size: 20,
-                                  ),
-                                ],
-                              ),
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.fromLTRB(
-                                    16,
-                                    0,
-                                    16,
-                                    14,
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      if (notes.isNotEmpty) ...[
-                                        Row(
-                                          children: [
-                                            const Icon(
-                                              Icons.notes_rounded,
-                                              size: 14,
-                                              color: Colors.blueGrey,
-                                            ),
-                                            const SizedBox(width: 4),
-                                            Expanded(
-                                              child: Text(
-                                                isAr
-                                                    ? 'ملاحظات المزارع: $notes'
-                                                    : 'Farmer Notes: $notes',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors.blueGrey,
-                                                ),
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                      ],
-                                      if (fert.isNotEmpty)
-                                        Container(
-                                          padding: const EdgeInsets.all(10),
-                                          decoration: BoxDecoration(
-                                            color: const Color(0xFFF1F8E9),
-                                            borderRadius: BorderRadius.circular(
-                                              10,
-                                            ),
-                                            border: Border.all(
-                                              color: Colors.green.shade200,
-                                            ),
-                                          ),
-                                          child: Row(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              const Text(
-                                                '🌱',
-                                                style: TextStyle(fontSize: 14),
-                                              ),
-                                              const SizedBox(width: 6),
-                                              Expanded(
-                                                child: Text(
-                                                  isAr
-                                                      ? 'السماد الموصى به:\r\n$fert'
-                                                      : 'Recommended Fertilizer:\r\n$fert',
-                                                  style: TextStyle(
-                                                    fontSize: 12,
-                                                    color:
-                                                        Colors.green.shade900,
-                                                    fontWeight: FontWeight.w600,
-                                                    height: 1.4,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ),
-                                        ),
-                                    ],
-                                  ),
-                                ),
-                              ],
+                                );
+                              },
                             ),
                           );
                         },
-                      );
-                    },
+                      ),
+                      Expanded(
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('diagnosis_history')
+                              .where(
+                                'farm_code',
+                                isEqualTo: farmCode.isEmpty
+                                    ? 'FARM-DEFAULT'
+                                    : farmCode,
+                              )
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState ==
+                                ConnectionState.waiting) {
+                              return const Center(
+                                child: CircularProgressIndicator(
+                                  color: Color(0xFF2E7D32),
+                                ),
+                              );
+                            }
+
+                            var docs = snapshot.hasData
+                                ? snapshot.data!.docs
+                                : [];
+
+                            // ترتيب تنازلي حسب التاريخ (الأحدث أولاً)
+                            docs.sort((a, b) {
+                              final aTime =
+                                  (a.data()
+                                          as Map<String, dynamic>)['createdAt']
+                                      as Timestamp?;
+                              final bTime =
+                                  (b.data()
+                                          as Map<String, dynamic>)['createdAt']
+                                      as Timestamp?;
+                              if (aTime == null && bTime == null) return 0;
+                              if (aTime == null) return 1;
+                              if (bTime == null) return -1;
+                              return bTime.compareTo(aTime);
+                            });
+
+                            if (docs.isEmpty) {
+                              return Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(
+                                      Icons.history_rounded,
+                                      size: 56,
+                                      color: Colors.grey.shade300,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      isAr
+                                          ? 'لا توجد فحوصات سابقة مسجلة'
+                                          : 'No recorded scan history yet',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade500,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      isAr
+                                          ? 'التقط صورة نبات لبدء التشخيص'
+                                          : 'Snap a plant photo to start diagnosing',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        color: Colors.grey.shade400,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              itemCount: docs.length,
+                              itemBuilder: (context, idx) {
+                                final doc = docs[idx];
+                                final docId = doc.id;
+                                final d = doc.data() as Map<String, dynamic>;
+                                final diseaseName = isAr
+                                    ? (d['disease_name_ar'] ??
+                                          d['disease_raw_key'] ??
+                                          '')
+                                    : (d['disease_name_en'] ??
+                                          d['disease_raw_key'] ??
+                                          '');
+                                final crop = isAr
+                                    ? (d['crop_name_ar'] ?? 'محصول')
+                                    : (d['crop_name_en'] ?? 'Crop');
+                                final double conf = (d['confidence'] is num)
+                                    ? (d['confidence'] as num).toDouble()
+                                    : 0.0;
+                                final notes = d['notes']?.toString() ?? '';
+                                final fert = d['fertilizer']?.toString() ?? '';
+                                final Timestamp? ts =
+                                    d['createdAt'] as Timestamp?;
+                                final bool isHealthy =
+                                    (d['disease_raw_key']?.toString() ?? '')
+                                        .contains('healthy');
+                                final docCreatorName =
+                                    d['created_by_name']?.toString() ?? '';
+
+                                final hasDeletePermission = canDelete;
+
+                                String dateStr = '';
+                                if (ts != null) {
+                                  final dt = ts.toDate();
+                                  dateStr =
+                                      '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')} '
+                                      '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+                                }
+
+                                return Card(
+                                  elevation: 0,
+                                  margin: const EdgeInsets.only(bottom: 10),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(14),
+                                    side: BorderSide(
+                                      color: isHealthy
+                                          ? Colors.green.shade200
+                                          : Colors.orange.shade200,
+                                    ),
+                                  ),
+                                  child: ExpansionTile(
+                                    leading: Container(
+                                      padding: const EdgeInsets.all(8),
+                                      decoration: BoxDecoration(
+                                        color: isHealthy
+                                            ? const Color(0xFFE8F5E9)
+                                            : Colors.orange.shade50,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Icon(
+                                        isHealthy
+                                            ? Icons.check_circle_outline_rounded
+                                            : Icons.spa_rounded,
+                                        color: isHealthy
+                                            ? const Color(0xFF2E7D32)
+                                            : Colors.orange.shade800,
+                                        size: 22,
+                                      ),
+                                    ),
+                                    title: Text(
+                                      '$crop: $diseaseName',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13.5,
+                                      ),
+                                    ),
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          '$dateStr · ${isAr ? 'دقة' : 'Conf'}: ${(conf * 100).toStringAsFixed(0)}%',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: Colors.grey.shade600,
+                                          ),
+                                        ),
+                                        if (docCreatorName.isNotEmpty)
+                                          Text(
+                                            '${isAr ? 'بواسطة' : 'by'}: $docCreatorName',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              color: Colors.grey.shade500,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                    // ===== زر الحذف =====
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        if (hasDeletePermission)
+                                          IconButton(
+                                            icon: const Icon(
+                                              Icons.delete_outline_rounded,
+                                              color: Colors.red,
+                                              size: 20,
+                                            ),
+                                            tooltip: isAr
+                                                ? 'حذف هذا السجل'
+                                                : 'Delete record',
+                                            onPressed: () =>
+                                                _deleteDiagnosisRecord(
+                                                  sheetCtx,
+                                                  docId,
+                                                  isAr,
+                                                  '$crop: $diseaseName',
+                                                ),
+                                          )
+                                        else
+                                          IconButton(
+                                            icon: Icon(
+                                              Icons.lock_outline_rounded,
+                                              color: Colors.grey.shade400,
+                                              size: 18,
+                                            ),
+                                            tooltip: isAr
+                                                ? 'لا تملك الصلاحية لحذف هذا السجل'
+                                                : 'You do not have permission to delete this record',
+                                            onPressed: () {
+                                              ScaffoldMessenger.of(
+                                                context,
+                                              ).showSnackBar(
+                                                SnackBar(
+                                                  content: Text(
+                                                    isAr
+                                                        ? '🔒 لا تملك الصلاحية لحذف هذا السجل'
+                                                        : '🔒 You do not have permission to delete this record',
+                                                  ),
+                                                  backgroundColor:
+                                                      Colors.orange.shade800,
+                                                ),
+                                              );
+                                            },
+                                          ),
+                                        const Icon(
+                                          Icons.expand_more_rounded,
+                                          color: Colors.grey,
+                                          size: 20,
+                                        ),
+                                      ],
+                                    ),
+                                    children: [
+                                      Padding(
+                                        padding: const EdgeInsets.fromLTRB(
+                                          16,
+                                          0,
+                                          16,
+                                          14,
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            if (notes.isNotEmpty) ...[
+                                              Row(
+                                                children: [
+                                                  const Icon(
+                                                    Icons.notes_rounded,
+                                                    size: 14,
+                                                    color: Colors.blueGrey,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Expanded(
+                                                    child: Text(
+                                                      isAr
+                                                          ? 'ملاحظات المزارع: $notes'
+                                                          : 'Farmer Notes: $notes',
+                                                      style: const TextStyle(
+                                                        fontSize: 12,
+                                                        color: Colors.blueGrey,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                              const SizedBox(height: 8),
+                                            ],
+                                            if (fert.isNotEmpty)
+                                              Container(
+                                                padding: const EdgeInsets.all(
+                                                  10,
+                                                ),
+                                                decoration: BoxDecoration(
+                                                  color: const Color(
+                                                    0xFFF1F8E9,
+                                                  ),
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                  border: Border.all(
+                                                    color:
+                                                        Colors.green.shade200,
+                                                  ),
+                                                ),
+                                                child: Row(
+                                                  crossAxisAlignment:
+                                                      CrossAxisAlignment.start,
+                                                  children: [
+                                                    const Text(
+                                                      '🌱',
+                                                      style: TextStyle(
+                                                        fontSize: 14,
+                                                      ),
+                                                    ),
+                                                    const SizedBox(width: 6),
+                                                    Expanded(
+                                                      child: Text(
+                                                        isAr
+                                                            ? 'السماد الموصى به:\r\n$fert'
+                                                            : 'Recommended Fertilizer:\r\n$fert',
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color: Colors
+                                                              .green
+                                                              .shade900,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          height: 1.4,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -2457,68 +2666,94 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
     );
   }
 
-  Widget _buildQuickNoteChip(String label, String noteText) {
-    final isSelected = _notesController.text.trim() == noteText.trim();
-    return InkWell(
-      borderRadius: BorderRadius.circular(20),
-      onTap: () {
-        setState(() {
-          if (isSelected) {
-            _notesController.clear();
-          } else {
-            _notesController.text = noteText;
-          }
-        });
-      },
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        decoration: BoxDecoration(
-          color: isSelected ? const Color(0xFFE8F5E9) : Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isSelected ? const Color(0xFF2E7D32) : Colors.grey.shade300,
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 4,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-            color: isSelected ? const Color(0xFF1B5E20) : Colors.grey.shade800,
-          ),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final isAr = widget.isArabic;
-    bool isLowConfidence = _confidence != null && _confidence! < 0.35;
+    final isAr = widget.isArabic ?? AppLanguage.isArabic.value;
+    final isLowConfidence =
+        _confidence != null && _confidence! < _minimumConfidence;
+    final profilePhoto = FarmSessionService
+        .currentUserProfile
+        .value?['photo_url']
+        ?.toString();
 
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: Scaffold(
-        backgroundColor: TerraTheme.mist,
+        backgroundColor: Colors.white,
+        drawer: widget.openDiagnosisOnStart
+            ? null
+            : TerraDrawer(isArabic: isAr),
         appBar: AppBar(
-          title: Text(
-            isAr ? 'طبيب النبات والتشخيص الذكي' : 'AI Plant Doctor Diagnosis',
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          leading: Builder(
+            builder: (context) => IconButton(
+              icon: _buildTopAvatar(
+                profilePhoto ?? FirebaseAuth.instance.currentUser?.photoURL,
+              ),
+              tooltip: isAr ? 'الحساب' : 'Account',
+              onPressed: widget.openDiagnosisOnStart
+                  ? _closeDiagnosis
+                  : () => Scaffold.of(context).openDrawer(),
+            ),
+          ),
+          title: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.asset(
+                  'assets/images/logo.jpg',
+                  width: 32,
+                  height: 32,
+                ),
+              ),
+              const SizedBox(width: 8),
+              const Text(
+                'TerraLogic',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: _sage,
+                ),
+              ),
+            ],
           ),
           actions: [
-            IconButton(
-              icon: const Icon(Icons.history_rounded, color: Color(0xFF2E7D32)),
-              tooltip: isAr ? 'سجل الفحوصات السابقة' : 'Past Scans History',
-              onPressed: () => _showDiagnosisHistoryBottomSheet(context, isAr),
-            ),
+            if (FirebaseAuth.instance.currentUser == null)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                child: FilledButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  ),
+                  icon: const Icon(Icons.login_rounded, size: 17),
+                  label: Text(
+                    isAr ? 'تسجيل الدخول' : 'Login',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12,
+                    ),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF2E7D32),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 10),
+                    minimumSize: const Size(0, 36),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                ),
+              ),
+            if (!widget.openDiagnosisOnStart)
+              IconButton(
+                icon: const Icon(Icons.history_rounded, color: _sage),
+                tooltip: isAr
+                    ? 'سجل الفحوصات السابقة'
+                    : 'Past Diagnosis History',
+                onPressed: () =>
+                    _showDiagnosisHistoryBottomSheet(context, isAr),
+              ),
             const SizedBox(width: 8),
           ],
         ),
@@ -2527,783 +2762,930 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFE7F0E7),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: TerraTheme.line),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.phone_android_rounded, color: TerraTheme.forest),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        isAr
-                            ? 'يعمل تشخيص الصورة على الجهاز. مزامنة سجل التشخيص تحتاج إلى اتصال وصلاحية.'
-                            : 'Image diagnosis runs on this device. Syncing history requires connection and permission.',
-                        style: const TextStyle(fontSize: 12, height: 1.4),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // اختيار المحصول يدوياً
-              Container(
-                margin: const EdgeInsets.only(bottom: 16),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade300),
-                ),
-                child: DropdownButtonFormField<String>(
-                  initialValue: _selectedCropType,
-                  decoration: InputDecoration(
-                    prefixIcon: const Icon(
-                      Icons.grass_rounded,
-                      color: Color(0xFF2E7D32),
-                    ),
-                    border: InputBorder.none,
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    labelText: isAr
-                        ? 'حدد نوع النبات (لزيادة الدقة)'
-                        : 'Select Plant Type (for better accuracy)',
-                    labelStyle: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey.shade700,
-                    ),
+              if (!_showDiagnosisTools &&
+                  _image == null &&
+                  _diseaseResult == null)
+                Card(
+                  margin: const EdgeInsets.only(top: 36, bottom: 24),
+                  elevation: 0,
+                  color: _panel,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                    side: BorderSide(color: _sage.withValues(alpha: .35)),
                   ),
-                  icon: const Icon(
-                    Icons.arrow_drop_down_circle,
-                    color: Color(0xFF2E7D32),
-                  ),
-                  items: _cropOptions.map((crop) {
-                    String displayText = crop;
-                    if (crop == 'Auto') {
-                      displayText = isAr
-                          ? 'الكل (كشف ذكي وتلقائي للمحصول)'
-                          : 'All (Auto-detect crop)';
-                    } else if (isAr) {
-                      displayText =
-                          '${_cropTranslations[crop] ?? crop} ($crop)';
-                    }
-
-                    return DropdownMenuItem(
-                      value: crop,
-                      child: Text(
-                        displayText,
-                        style: TextStyle(
-                          fontWeight: crop == 'Auto'
-                              ? FontWeight.bold
-                              : FontWeight.normal,
-                          color: crop == 'Auto'
-                              ? const Color(0xFF2E7D32)
-                              : Colors.black87,
-                        ),
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => _selectedCropType = val);
-                  },
-                ),
-              ),
-
-              // مربع الصورة وأدوات الالتقاط
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  children: [
-                    _image == null
-                        ? Container(
-                            height: 190,
-                            width: double.infinity,
-                            color: Colors.white,
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                const Icon(Icons.eco_outlined, size: 38, color: TerraTheme.olive),
-                                const SizedBox(height: 10),
-                                Text(
-                                  isAr
-                                      ? 'صور الورقة عن قرب للحصول على أعلى دقة'
-                                      : 'Take a close-up photo of the leaf for best accuracy',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade700,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          )
-                        : Stack(
-                            alignment: Alignment.topRight,
-                            children: [
-                              Image.file(
-                                _image!,
-                                height: 230,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: CircleAvatar(
-                                  backgroundColor: Colors.black54,
-                                  child: IconButton(
-                                    icon: const Icon(
-                                      Icons.close,
-                                      color: Colors.white,
-                                      size: 18,
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _image = null;
-                                        _diseaseResult = null;
-                                        _confidence = null;
-                                        _statusMessage = null;
-                                      });
-                                    },
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 12,
-                      ),
-                      color: Colors.white,
-                      child: Wrap(
-                        alignment: WrapAlignment.center,
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: [
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 36),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                              foregroundColor: const Color(0xFF2E7D32),
-                              side: BorderSide(color: Colors.green.shade300),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: _isClassifying
-                                ? null
-                                : () => _pickImage(ImageSource.camera),
-                            icon: const Icon(Icons.camera_alt, size: 18),
-                            label: Text(isAr ? 'كاميرا' : 'Camera'),
-                          ),
-                          OutlinedButton.icon(
-                            style: OutlinedButton.styleFrom(
-                              minimumSize: const Size(0, 36),
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                              ),
-                              visualDensity: VisualDensity.compact,
-                              foregroundColor: Colors.teal.shade800,
-                              side: BorderSide(color: Colors.teal.shade300),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            onPressed: _isClassifying
-                                ? null
-                                : () => _pickImage(ImageSource.gallery),
-                            icon: const Icon(Icons.photo_library, size: 18),
-                            label: Text(isAr ? 'معرض الصور' : 'Gallery'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // ملاحظة المزارع التفاعلية والذكية
-              Card(
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                elevation: 0,
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Icon(
-                                Icons.auto_awesome,
-                                size: 18,
-                                color: Theme.of(context).primaryColor,
-                              ),
-                              const SizedBox(width: 6),
-                              Text(
-                                isAr
-                                    ? 'ملاحظة حالة النبات (تحليل ذكي)'
-                                    : 'Plant State Note (AI Analysis)',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFE8F5E9),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              isAr
-                                  ? 'اختياري · لزيادة الدقة'
-                                  : 'Optional · Higher accuracy',
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: Color(0xFF2E7D32),
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
-                      TextField(
-                        controller: _notesController,
-                        maxLines: 2,
-                        minLines: 1,
-                        decoration: InputDecoration(
-                          hintText: isAr
-                              ? 'مثال: "الها شهر نفس الحجم"، "بدأت منذ أسبوع"، "تساقط بالأزهار"...'
-                              : 'e.g. "Stunted size for a month", "Infection started a week ago"...',
-                          hintStyle: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade400,
-                          ),
-                          filled: true,
-                          fillColor: const Color(0xFFF9FBF9),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide(color: Colors.grey.shade300),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: const BorderSide(
-                              color: Color(0xFF2E7D32),
-                              width: 1.5,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                          suffixIcon: _notesController.text.isNotEmpty
-                              ? IconButton(
-                                  icon: const Icon(Icons.clear, size: 18),
-                                  onPressed: () {
-                                    setState(() => _notesController.clear());
-                                  },
-                                )
-                              : null,
-                        ),
-                        onChanged: (_) => setState(() {}),
-                      ),
-                      const SizedBox(height: 10),
-                      // أزرار الاقتراحات السريعة التفاعلية
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            _buildQuickNoteChip(
-                              isAr
-                                  ? '⏳ الها شهر نفس الحجم'
-                                  : '⏳ Same size for month',
-                              'الها شهر نفس الحجم',
-                            ),
-                            const SizedBox(width: 6),
-                            _buildQuickNoteChip(
-                              isAr ? '⚡ بدأت منذ أسبوع' : '⚡ Started week ago',
-                              'بدأت الإصابة منذ أسبوع وسريعة الانتشار',
-                            ),
-                            const SizedBox(width: 6),
-                            _buildQuickNoteChip(
-                              isAr ? '🍂 اصفرار من تحت' : '🍂 Lower yellowing',
-                              'اصفرار الأوراق السفلية القديمة',
-                            ),
-                            const SizedBox(width: 6),
-                            _buildQuickNoteChip(
-                              isAr
-                                  ? '💧 ري يومي والتربة رطبة'
-                                  : '💧 Daily watering',
-                              'الري يومي والتربة رطبة باستمرار',
-                            ),
-                            const SizedBox(width: 6),
-                            _buildQuickNoteChip(
-                              isAr ? '🌸 تساقط في الأزهار' : '🌸 Flower drop',
-                              'تساقط الأزهار والعقد الصغير',
-                            ),
-                            const SizedBox(width: 6),
-                            _buildQuickNoteChip(
-                              isAr ? '🔥 احتراق في الحواف' : '🔥 Edge burning',
-                              'احتراق والتفاف حواف الأوراق',
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // زر بدء الفحص
-              SizedBox(
-                height: 50,
-                child: ElevatedButton.icon(
-                  onPressed: (_isClassifying || _image == null)
-                      ? null
-                      : _classifyAndDiagnose,
-                  icon: _isClassifying
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(
-                          Icons.check_circle_outline,
-                          color: Colors.white,
-                        ),
-                  label: Text(
-                    _isClassifying
-                        ? (isAr ? 'جاري الفحص الدقيق...' : 'Diagnosing...')
-                        : (isAr
-                              ? 'تشخيص الحالة وإيجاد السماد المناسب'
-                              : 'Diagnose & Get Fertilizer Plan'),
-                    style: const TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // رسائل الحالة والتحميل
-              if (_statusMessage != null)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color:
-                        _statusMessage!.startsWith('فشل') ||
-                            _statusMessage!.startsWith('Failed')
-                        ? Colors.red.shade50
-                        : Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color:
-                          _statusMessage!.startsWith('فشل') ||
-                              _statusMessage!.startsWith('Failed')
-                          ? Colors.red.shade200
-                          : Colors.orange.shade200,
-                    ),
-                  ),
-                  child: Text(
-                    _statusMessage!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color:
-                          _statusMessage!.startsWith('فشل') ||
-                              _statusMessage!.startsWith('Failed')
-                          ? Colors.red.shade800
-                          : Colors.orange.shade900,
-                    ),
-                  ),
-                ),
-
-              // 4. بطاقة نتائج التشخيص المتكاملة
-              if (_diseaseResult != null) ...[
-                Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: TerraTheme.paper,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: TerraTheme.line),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.offline_bolt_rounded, color: TerraTheme.forest),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          isAr
-                              ? 'نتيجة النموذج محلية واستدلالية؛ راجع مختصًا قبل اتخاذ قرار علاجي.'
-                              : 'This is a local model estimate. Consult an agronomist before treatment decisions.',
-                          style: const TextStyle(fontSize: 12, height: 1.4),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (isLowConfidence)
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    margin: const EdgeInsets.only(bottom: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.amber.shade400),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 32, 20, 28),
+                    child: Column(
                       children: [
-                        Icon(
-                          Icons.info_outline,
-                          color: Colors.amber.shade800,
-                          size: 22,
+                        Container(
+                          width: 82,
+                          height: 82,
+                          decoration: BoxDecoration(
+                            color: _sage.withValues(alpha: .16),
+                            shape: BoxShape.circle,
+                            border: Border.all(color: _sage, width: 2),
+                          ),
+                          child: const Icon(
+                            Icons.camera_alt_rounded,
+                            size: 40,
+                            color: _mint,
+                          ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isAr
-                                    ? 'تنبيه: درجة مطابقة النموذج منخفضة (${(_confidence! * 100).toStringAsFixed(1)}%)'
-                                    : 'Notice: Low model score (${(_confidence! * 100).toStringAsFixed(1)}%)',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.amber.shade900,
-                                  fontSize: 13,
-                                ),
+                        const SizedBox(height: 18),
+                        Text(
+                          isAr
+                              ? 'شخّص نبتتك بسهولة'
+                              : 'Diagnose your plant easily',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                            color: _mint,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          isAr
+                              ? 'التقط صورة لورقة النبات واحصل على تشخيص فوري'
+                              : 'Take a photo of a leaf and get an instant diagnosis',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: _sage,
+                            height: 1.4,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 52,
+                          child: FilledButton.icon(
+                            onPressed: () {
+                              setState(() => _showDiagnosisTools = true);
+                            },
+                            icon: const Icon(Icons.camera_alt_rounded),
+                            label: Text(
+                              isAr
+                                  ? 'صور نبتتك وابدأ التشخيص'
+                                  : 'Take a photo and start',
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.bold,
                               ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isAr
-                                    ? 'النموذج مدرب أساساً على أوراق النبات المقربة. تم الاستناد لملاحظاتك لإعطاء أفضل توصية سمادية.'
-                                    : 'The vision model is trained on close leaf images. Symptoms notes were used to provide optimal nutrition advice.',
-                                style: TextStyle(
-                                  color: Colors.amber.shade900,
-                                  fontSize: 11,
-                                ),
+                            ),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: _sage,
+                              foregroundColor: _charcoal,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
                     ),
                   ),
-
+                ),
+              if (_showDiagnosisTools ||
+                  _image != null ||
+                  _diseaseResult != null) ...[
                 Card(
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  margin: const EdgeInsets.only(bottom: 14),
                   elevation: 0,
+                  color: _panel,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(color: _sage.withValues(alpha: .2)),
+                  ),
                   child: Padding(
-                    padding: const EdgeInsets.all(18.0),
+                    padding: const EdgeInsets.all(14),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                _diseaseResult!['name'] ??
-                                    (isAr ? 'تشخيص نباتي' : 'Diagnosis Result'),
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF2E7D32),
-                                ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 11,
+                          ),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFE7F0E7),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.phone_android_rounded,
+                                color: TerraTheme.forest,
                               ),
-                            ),
-                            if (_confidence != null)
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 10,
-                                  vertical: 4,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isLowConfidence
-                                      ? Colors.orange.shade100
-                                      : const Color(0xFFE8F5E9),
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
+                              const SizedBox(width: 10),
+                              Expanded(
                                 child: Text(
-                                  '${isAr ? 'درجة النموذج' : 'Model score'}: ${(_confidence! * 100).toStringAsFixed(1)}%',
-                                  style: TextStyle(
+                                  isAr
+                                      ? 'يعمل تشخيص الصورة على الجهاز. مزامنة سجل التشخيص تحتاج إلى اتصال وصلاحية.'
+                                      : 'Image diagnosis runs on this device. Syncing history requires connection and permission.',
+                                  style: const TextStyle(
                                     fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: isLowConfidence
-                                        ? Colors.orange.shade900
-                                        : const Color(0xFF2E7D32),
+                                    height: 1.4,
                                   ),
                                 ),
                               ),
-                          ],
-                        ),
-                        const Divider(height: 24),
-
-                        Text(
-                          isAr
-                              ? '📖 الوصف والأعراض:'
-                              : '📖 Disease Overview & Symptoms:',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.blueGrey,
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _diseaseResult!['description'] ??
-                              (isAr
-                                  ? 'لا يوجد وصف متاح.'
-                                  : 'No description available.'),
-                          style: const TextStyle(fontSize: 13, height: 1.4),
+                        const SizedBox(height: 12),
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: Text(
+                            isAr ? 'اختر المحصول' : 'Choose crop',
+                            style: const TextStyle(
+                              color: _mint,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          height: 92,
+                          child: ListView.separated(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _cropOptions.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(width: 10),
+                            itemBuilder: (context, index) {
+                              final crop = _cropOptions[index];
+                              final active = crop == _selectedCropType;
+                              final label = crop == 'Auto'
+                                  ? (isAr ? 'الكل' : 'Auto')
+                                  : (isAr
+                                        ? _cropTranslations[crop] ?? crop
+                                        : crop);
+                              return InkWell(
+                                borderRadius: BorderRadius.circular(16),
+                                onTap: () =>
+                                    setState(() => _selectedCropType = crop),
+                                child: AnimatedContainer(
+                                  duration: const Duration(milliseconds: 180),
+                                  width: 78,
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: active ? _sage : Colors.white,
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: active
+                                          ? _sage
+                                          : _sage.withValues(alpha: .18),
+                                    ),
+                                  ),
+                                  child: Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      _CropIcon(
+                                        crop: crop,
+                                        color: active ? Colors.white : _sage,
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        label,
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          color: active ? Colors.white : _mint,
+                                          fontSize: 11,
+                                          fontWeight: active
+                                              ? FontWeight.bold
+                                              : FontWeight.normal,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                // مربع الصورة وأدوات الالتقاط
+                Card(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                    side: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  clipBehavior: Clip.antiAlias,
+                  child: Column(
+                    children: [
+                      _image == null
+                          ? Container(
+                              height: 220,
+                              width: double.infinity,
+                              color: _charcoal,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  Container(
+                                    width: 154,
+                                    height: 154,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      border: Border.all(
+                                        color: _sage,
+                                        width: 2,
+                                      ),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: _sage.withValues(alpha: .12),
+                                          blurRadius: 24,
+                                          spreadRadius: 4,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      const Icon(
+                                        Icons.center_focus_weak_rounded,
+                                        size: 38,
+                                        color: _mint,
+                                      ),
+                                      const SizedBox(height: 10),
+                                      Text(
+                                        isAr
+                                            ? 'ضع الورقة داخل الإطار'
+                                            : 'Place the leaf inside the frame',
+                                        style: const TextStyle(
+                                          color: _mint,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            )
+                          : Stack(
+                              alignment: Alignment.topRight,
+                              children: [
+                                Image.file(
+                                  _image!,
+                                  height: 230,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: CircleAvatar(
+                                    backgroundColor: Colors.black54,
+                                    child: IconButton(
+                                      icon: const Icon(
+                                        Icons.close,
+                                        color: _panel,
+                                        size: 18,
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          _image = null;
+                                          _diseaseResult = null;
+                                          _confidence = null;
+                                          _statusMessage = null;
+                                        });
+                                      },
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 12,
+                        ),
+                        color: Colors.white,
+                        child: Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 36),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                visualDensity: VisualDensity.compact,
+                                foregroundColor: _mint,
+                                side: BorderSide(
+                                  color: _sage.withValues(alpha: .5),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: _isClassifying
+                                  ? null
+                                  : () => _pickImage(ImageSource.camera),
+                              icon: const Icon(Icons.camera_alt, size: 18),
+                              label: Text(isAr ? 'كاميرا' : 'Camera'),
+                            ),
+                            OutlinedButton.icon(
+                              style: OutlinedButton.styleFrom(
+                                minimumSize: const Size(0, 36),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                ),
+                                visualDensity: VisualDensity.compact,
+                                foregroundColor: _mint,
+                                side: BorderSide(
+                                  color: _sage.withValues(alpha: .5),
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              onPressed: _isClassifying
+                                  ? null
+                                  : () => _pickImage(ImageSource.gallery),
+                              icon: const Icon(Icons.photo_library, size: 18),
+                              label: Text(isAr ? 'معرض الصور' : 'Gallery'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
 
-                        if (_symptomAnalysisNote != null) ...[
+                // ملاحظة المزارع التفاعلية والذكية
+                Card(
+                  margin: EdgeInsets.zero,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  elevation: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isAr ? 'ملاحظتك (اختياري)' : 'Your note (optional)',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        TextField(
+                          controller: _notesController,
+                          maxLines: 2,
+                          minLines: 1,
+                          decoration: InputDecoration(
+                            hintText: isAr
+                                ? 'اكتب ملاحظتك هنا...'
+                                : 'Write your note here...',
+                            hintStyle: TextStyle(color: Colors.grey.shade500),
+                            filled: true,
+                            fillColor: const Color(0xFFF9FBF9),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: BorderSide.none,
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10),
+                              borderSide: const BorderSide(
+                                color: Color(0xFF2E7D32),
+                              ),
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 2),
+
+                // زر بدء الفحص
+                Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [_sage, _sage],
+                      begin: AlignmentDirectional.centerStart,
+                      end: AlignmentDirectional.centerEnd,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: ElevatedButton.icon(
+                    onPressed: (_isClassifying || _image == null)
+                        ? null
+                        : _classifyAndDiagnose,
+                    icon: _isClassifying
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Icon(
+                            Icons.document_scanner_rounded,
+                            color: Colors.white,
+                          ),
+                    label: Text(
+                      _isClassifying
+                          ? (isAr ? 'جاري الفحص...' : 'Scanning...')
+                          : (isAr
+                                ? 'تشخيص / رعاية ذكية'
+                                : 'Smart Diagnosis / Care'),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      foregroundColor: Colors.white,
+                      shadowColor: Colors.transparent,
+                      minimumSize: const Size.fromHeight(50),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // رسائل الحالة والتحميل
+                if (_statusMessage != null)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color:
+                          _statusMessage!.startsWith('فشل') ||
+                              _statusMessage!.startsWith('Failed')
+                          ? Colors.red.shade50
+                          : Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color:
+                            _statusMessage!.startsWith('فشل') ||
+                                _statusMessage!.startsWith('Failed')
+                            ? Colors.red.shade200
+                            : Colors.orange.shade200,
+                      ),
+                    ),
+                    child: Text(
+                      _statusMessage!,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color:
+                            _statusMessage!.startsWith('فشل') ||
+                                _statusMessage!.startsWith('Failed')
+                            ? Colors.red.shade800
+                            : Colors.orange.shade900,
+                      ),
+                    ),
+                  ),
+
+                // 4. بطاقة نتائج التشخيص المتكاملة
+                if (_diseaseResult != null) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: _panel,
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: _sage.withValues(alpha: .25)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.offline_bolt_rounded,
+                          color: TerraTheme.forest,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            isAr
+                                ? 'نتيجة النموذج محلية واستدلالية؛ راجع مختصًا قبل اتخاذ قرار علاجي.'
+                                : 'This is a local model estimate. Consult an agronomist before treatment decisions.',
+                            style: const TextStyle(fontSize: 12, height: 1.4),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isLowConfidence)
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.amber.shade400),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(
+                            Icons.info_outline,
+                            color: Colors.amber.shade800,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isAr
+                                      ? 'تنبيه: درجة مطابقة النموذج منخفضة (${(_confidence! * 100).toStringAsFixed(1)}%)'
+                                      : 'Notice: Low model score (${(_confidence! * 100).toStringAsFixed(1)}%)',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.amber.shade900,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  isAr
+                                      ? 'النموذج مدرب أساساً على أوراق النبات المقربة. تم الاستناد لملاحظاتك لإعطاء أفضل توصية سمادية.'
+                                      : 'The vision model is trained on close leaf images. Symptoms notes were used to provide optimal nutrition advice.',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade900,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                  Card(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    elevation: 0,
+                    child: Padding(
+                      padding: const EdgeInsets.all(18.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  _diseaseResult!['display_name'] ??
+                                      (isAr
+                                          ? 'تشخيص نباتي'
+                                          : 'Diagnosis Result'),
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF2E7D32),
+                                  ),
+                                ),
+                              ),
+                              if (_confidence != null)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 4,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isLowConfidence
+                                        ? Colors.orange.shade100
+                                        : const Color(0xFFE8F5E9),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${isAr ? 'درجة النموذج' : 'Model score'}: ${(_confidence! * 100).toStringAsFixed(1)}%',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                      color: isLowConfidence
+                                          ? Colors.orange.shade900
+                                          : const Color(0xFF2E7D32),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          const Divider(height: 24),
+
+                          Text(
+                            isAr
+                                ? '📖 الوصف والأعراض:'
+                                : '📖 Disease Overview & Symptoms:',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.blueGrey,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _diseaseResult!['description'] ??
+                                (isAr
+                                    ? 'لا يوجد وصف متاح.'
+                                    : 'No description available.'),
+                            style: const TextStyle(fontSize: 13, height: 1.4),
+                          ),
+                          const SizedBox(height: 16),
+
+                          if (_symptomAnalysisNote != null) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFF0F7FF),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: const Color(0xFF90CAF9),
+                                  width: 1.2,
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.blue.withValues(alpha: 0.06),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 3),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    children: [
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xFF1976D2),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
+                                        child: const Icon(
+                                          Icons.psychology_rounded,
+                                          color: Colors.white,
+                                          size: 18,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Text(
+                                          isAr
+                                              ? 'تحليل ذكي لملاحظة المزارع'
+                                              : 'AI Agronomist Note Insight',
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                            color: Color(0xFF0D47A1),
+                                          ),
+                                        ),
+                                      ),
+                                      if (_symptomCategoryTitle != null)
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFE3F2FD),
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                            border: Border.all(
+                                              color: const Color(0xFF90CAF9),
+                                            ),
+                                          ),
+                                          child: Text(
+                                            _symptomCategoryTitle!,
+                                            style: const TextStyle(
+                                              fontSize: 11,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF1565C0),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  const Divider(
+                                    height: 18,
+                                    color: Color(0xFFBBDEFB),
+                                  ),
+                                  Text(
+                                    _symptomAnalysisNote!,
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      color: Color(0xFF1A237E),
+                                      height: 1.45,
+                                    ),
+                                  ),
+                                  if (_symptomGuidance != null &&
+                                      _symptomGuidance!.isNotEmpty) ...[
+                                    const SizedBox(height: 10),
+                                    Container(
+                                      width: double.infinity,
+                                      padding: const EdgeInsets.all(10),
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                        border: Border.all(
+                                          color: const Color(0xFFBBDEFB),
+                                        ),
+                                      ),
+                                      child: Row(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          const Text(
+                                            '💡',
+                                            style: TextStyle(fontSize: 14),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          Expanded(
+                                            child: Text(
+                                              _symptomGuidance!,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: Colors.blueGrey.shade800,
+                                                height: 1.4,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+
                           Container(
                             width: double.infinity,
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFF0F7FF),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                color: const Color(0xFF90CAF9),
-                                width: 1.2,
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.green.shade50,
+                                  Colors.teal.shade50,
+                                ],
                               ),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.blue.withValues(alpha: 0.06),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
-                                ),
-                              ],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.green.shade300),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
                                   children: [
-                                    Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF1976D2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Icon(
-                                        Icons.psychology_rounded,
-                                        color: Colors.white,
-                                        size: 18,
+                                    const Icon(
+                                      Icons.eco,
+                                      color: Color(0xFF2E7D32),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isAr
+                                          ? '🌱 السماد والتغذية الموصى بها:'
+                                          : '🌱 Recommended Fertilizer & Nutrition:',
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                        color: Color(0xFF2E7D32),
                                       ),
                                     ),
-                                    const SizedBox(width: 8),
-                                    Expanded(
-                                      child: Text(
-                                        isAr
-                                            ? 'تحليل ذكي لملاحظة المزارع'
-                                            : 'AI Agronomist Note Insight',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: Color(0xFF0D47A1),
-                                        ),
-                                      ),
-                                    ),
-                                    if (_symptomCategoryTitle != null)
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 8,
-                                          vertical: 3,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: const Color(0xFFE3F2FD),
-                                          borderRadius: BorderRadius.circular(
-                                            8,
-                                          ),
-                                          border: Border.all(
-                                            color: const Color(0xFF90CAF9),
-                                          ),
-                                        ),
-                                        child: Text(
-                                          _symptomCategoryTitle!,
-                                          style: const TextStyle(
-                                            fontSize: 11,
-                                            fontWeight: FontWeight.w600,
-                                            color: Color(0xFF1565C0),
-                                          ),
-                                        ),
-                                      ),
                                   ],
                                 ),
-                                const Divider(
-                                  height: 18,
-                                  color: Color(0xFFBBDEFB),
-                                ),
+                                const SizedBox(height: 6),
                                 Text(
-                                  _symptomAnalysisNote!,
-                                  style: const TextStyle(
+                                  _customFertilizerAdvice ??
+                                      (_diseaseResult!['fertilizer'] ??
+                                          (isAr
+                                              ? 'سماد متوازن NPK 20-20-20 لدعم حيوية النبات.'
+                                              : 'Balanced NPK 20-20-20 to support vigor.')),
+                                  style: TextStyle(
                                     fontSize: 13,
-                                    color: Color(0xFF1A237E),
-                                    height: 1.45,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green.shade900,
+                                    height: 1.4,
                                   ),
                                 ),
-                                if (_symptomGuidance != null &&
-                                    _symptomGuidance!.isNotEmpty) ...[
-                                  const SizedBox(height: 10),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                      border: Border.all(
-                                        color: const Color(0xFFBBDEFB),
-                                      ),
-                                    ),
-                                    child: Row(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          '💡',
-                                          style: TextStyle(fontSize: 14),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Expanded(
-                                          child: Text(
-                                            _symptomGuidance!,
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              fontWeight: FontWeight.w600,
-                                              color: Colors.blueGrey.shade800,
-                                              height: 1.4,
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
                               ],
                             ),
                           ),
                           const SizedBox(height: 16),
-                        ],
 
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(14),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.green.shade50,
-                                Colors.teal.shade50,
-                              ],
+                          Text(
+                            isAr
+                                ? '🛡️ الإجراءات العلاجية والمكافحة:'
+                                : '🛡️ Actionable Treatment & Care:',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.blueGrey,
                             ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green.shade300),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                children: [
-                                  const Icon(
-                                    Icons.eco,
-                                    color: Color(0xFF2E7D32),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    isAr
-                                        ? '🌱 السماد والتغذية الموصى بها:'
-                                        : '🌱 Recommended Fertilizer & Nutrition:',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Color(0xFF2E7D32),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Text(
-                                _customFertilizerAdvice ??
-                                    (_diseaseResult!['fertilizer'] ??
-                                        (isAr
-                                            ? 'سماد متوازن NPK 20-20-20 لدعم حيوية النبات.'
-                                            : 'Balanced NPK 20-20-20 to support vigor.')),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w600,
-                                  color: Colors.green.shade900,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ],
+                          const SizedBox(height: 6),
+                          Text(
+                            _formatTreatments(
+                              _diseaseResult!['treatments'],
+                              isAr,
+                            ),
+                            style: const TextStyle(fontSize: 13, height: 1.5),
                           ),
-                        ),
-                        const SizedBox(height: 16),
-
-                        Text(
-                          isAr
-                              ? '🛡️ الإجراءات العلاجية والمكافحة:'
-                              : '🛡️ Actionable Treatment & Care:',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.blueGrey,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          _formatTreatments(
-                            _diseaseResult!['treatments'],
-                            isAr,
-                          ),
-                          style: const TextStyle(fontSize: 13, height: 1.5),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              ],
+              const SizedBox(height: 8),
+              if (!_showDiagnosisTools &&
+                  _image == null &&
+                  _diseaseResult == null) ...[
+                Card(
+                  elevation: 0,
+                  color: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                    side: BorderSide(color: Colors.grey.shade200),
+                  ),
+                  child: ListTile(
+                    leading: const CircleAvatar(
+                      backgroundColor: Color(0xFFE8F5E9),
+                      child: Icon(
+                        Icons.wb_sunny_rounded,
+                        color: Color(0xFF2E7D32),
+                      ),
+                    ),
+                    title: Text(
+                      isAr ? 'الطقس والمناخ' : 'Weather & Climate',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    subtitle: Text(
+                      isAr
+                          ? 'تابع حالة الطقس لمزرعتك'
+                          : 'Track weather for your farm',
+                    ),
+                    trailing: const Icon(Icons.chevron_left_rounded),
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            WeatherClimateHomeScreen(isArabic: isAr),
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 50,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const CreateFarmScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_business_rounded),
+                    label: Text(
+                      isAr ? 'إنشاء مزرعة' : 'Create a farm',
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFF2E7D32),
+                      side: const BorderSide(color: Color(0xFF2E7D32)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
+                ),
               ],
             ],
           ),
@@ -3311,4 +3693,162 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
       ),
     );
   }
+
+  Widget _buildTopAvatar(String? photoUrl) {
+    final hasPhoto = photoUrl?.trim().isNotEmpty == true;
+    return CircleAvatar(
+      radius: 16,
+      backgroundColor: _sage.withValues(alpha: .2),
+      child: ClipOval(
+        child: hasPhoto
+            ? Image.network(
+                photoUrl!,
+                width: 32,
+                height: 32,
+                fit: BoxFit.cover,
+                loadingBuilder: (context, child, progress) {
+                  if (progress == null) return child;
+                  return const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 1.8,
+                      color: _sage,
+                    ),
+                  );
+                },
+                errorBuilder: (context, error, stackTrace) =>
+                    const Icon(Icons.person_rounded, color: _mint, size: 19),
+              )
+            : const Icon(Icons.person_rounded, color: _mint, size: 19),
+      ),
+    );
+  }
+}
+
+class _CropIcon extends StatelessWidget {
+  final String crop;
+  final Color color;
+
+  const _CropIcon({required this.crop, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      size: const Size(30, 30),
+      painter: _CropIconPainter(crop: crop, color: color),
+    );
+  }
+}
+
+class _CropIconPainter extends CustomPainter {
+  final String crop;
+  final Color color;
+
+  const _CropIconPainter({required this.crop, required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.8
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
+    final center = Offset(size.width / 2, size.height / 2);
+
+    switch (crop) {
+      case 'Citrus':
+        canvas.drawCircle(center.translate(1, 3), 8, paint);
+        canvas.drawOval(
+          Rect.fromCenter(
+            center: center.translate(5, -8),
+            width: 10,
+            height: 5,
+          ),
+          paint,
+        );
+        canvas.drawLine(
+          center.translate(0, -5),
+          center.translate(4, -8),
+          paint,
+        );
+        break;
+      case 'Olive':
+        canvas.drawLine(
+          center.translate(-9, 8),
+          center.translate(9, -8),
+          paint,
+        );
+        for (final offset in <Offset>[
+          center.translate(-5, 3),
+          center.translate(-1, -1),
+          center.translate(3, -5),
+        ]) {
+          canvas.drawOval(
+            Rect.fromCenter(center: offset, width: 7, height: 3.5),
+            paint,
+          );
+        }
+        canvas.drawCircle(center.translate(7, -7), 2, paint);
+        break;
+      case 'Potato':
+        final potato = Path()
+          ..moveTo(7, -8)
+          ..cubicTo(13, -5, 11, 5, 5, 9)
+          ..cubicTo(-1, 12, -10, 7, -9, 0)
+          ..cubicTo(-8, -8, 1, -11, 7, -8);
+        canvas.drawPath(potato.shift(center), paint);
+        canvas.drawCircle(center.translate(-3, -2), 1, paint);
+        canvas.drawCircle(center.translate(4, 3), 1, paint);
+        break;
+      case 'Tomato':
+        canvas.drawCircle(center.translate(0, 3), 8, paint);
+        final crown = Path()
+          ..moveTo(center.dx - 7, center.dy - 3)
+          ..lineTo(center.dx - 3, center.dy - 8)
+          ..lineTo(center.dx, center.dy - 4)
+          ..lineTo(center.dx + 3, center.dy - 8)
+          ..lineTo(center.dx + 7, center.dy - 3);
+        canvas.drawPath(crown, paint);
+        break;
+      case 'Wheat':
+        canvas.drawLine(
+          center.translate(0, 11),
+          center.translate(0, -10),
+          paint,
+        );
+        for (var i = 0; i < 4; i++) {
+          final y = center.dy - 7 + i * 5;
+          canvas.drawOval(
+            Rect.fromCenter(
+              center: Offset(center.dx - 4, y),
+              width: 8,
+              height: 3,
+            ),
+            paint,
+          );
+          canvas.drawOval(
+            Rect.fromCenter(
+              center: Offset(center.dx + 4, y - 2),
+              width: 8,
+              height: 3,
+            ),
+            paint,
+          );
+        }
+        break;
+      default:
+        canvas.drawCircle(center, 9, paint);
+        canvas.drawLine(
+          center.translate(-5, 5),
+          center.translate(5, -5),
+          paint,
+        );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _CropIconPainter oldDelegate) =>
+      oldDelegate.crop != crop || oldDelegate.color != color;
 }

@@ -18,6 +18,23 @@ service cloud.firestore {
       return signedIn() && currentUser().role in ['owner', 'manager', 'admin'];
     }
 
+    function ownsFarm(farmCode) {
+      return signedIn() &&
+        get(/databases/$(database)/documents/farms/$(farmCode)).data.owner_uid == request.auth.uid;
+    }
+
+    function isFarmMember(farmCode) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/farm_members/$(farmCode + '_' + request.auth.uid));
+    }
+
+    function isFarmManager(farmCode) {
+      return signedIn() &&
+        (get(/databases/$(database)/documents/farms/$(farmCode)).data.owner_uid == request.auth.uid ||
+          get(/databases/$(database)/documents/farm_members/$(farmCode + '_' + request.auth.uid)).data.role
+            in ['owner', 'manager', 'admin']);
+    }
+
     function canDeleteFarmData(farmCode) {
       return sameFarm(farmCode) &&
         (isManager() ||
@@ -33,10 +50,59 @@ service cloud.firestore {
 
     match /users/{userId} {
       allow read: if signedIn() && request.auth.uid == userId;
+      allow create, update: if signedIn() && request.auth.uid == userId;
     }
 
     match /farms/{farmCode} {
-      allow read: if sameFarm(farmCode);
+      allow read: if sameFarm(farmCode) ||
+        (signedIn() && resource.data.owner_uid == request.auth.uid) ||
+        isFarmMember(farmCode);
+      allow create: if signedIn() &&
+        request.resource.data.owner_uid == request.auth.uid;
+      allow update: if ownsFarm(farmCode) || isManager();
+    }
+
+    match /farm_members/{memberId} {
+      allow read: if signedIn() &&
+        (resource.data.user_uid == request.auth.uid ||
+          isFarmMember(resource.data.farm_code));
+      allow create: if signedIn() &&
+        (request.resource.data.user_uid == request.auth.uid ||
+          ownsFarm(request.resource.data.farm_code) ||
+          getAfter(
+            /databases/$(database)/documents/users/$(request.auth.uid)
+          ).data.farm_code == request.resource.data.farm_code);
+      allow update, delete: if ownsFarm(resource.data.farm_code);
+    }
+
+    match /workers/{workerId} {
+      allow read: if sameFarm(resource.data.farm_code);
+      allow create: if signedIn() &&
+        (ownsFarm(request.resource.data.farm_code) ||
+          getAfter(
+            /databases/$(database)/documents/users/$(request.auth.uid)
+          ).data.farm_code == request.resource.data.farm_code);
+      allow update, delete: if ownsFarm(resource.data.farm_code) || isManager();
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if signedIn() &&
+        resource.data.recipient_uid == request.auth.uid &&
+        isFarmMember(resource.data.farm_code);
+      allow create: if signedIn() &&
+        isFarmMember(request.resource.data.farm_code) &&
+        ((isFarmManager(request.resource.data.farm_code)) ||
+          (request.resource.data.recipient_uid == request.auth.uid &&
+            request.resource.data.type in ['frost', 'weather', 'diagnosis', 'harvest', 'general']) ||
+          (request.resource.data.type in ['security', 'member'] &&
+            get(/databases/$(database)/documents/farm_members/$(request.resource.data.farm_code + '_' + request.resource.data.recipient_uid)).data.role
+              in ['owner', 'manager', 'admin']));
+      allow update: if signedIn() &&
+        resource.data.recipient_uid == request.auth.uid &&
+        request.resource.data.recipient_uid == resource.data.recipient_uid &&
+        request.resource.data.farm_code == resource.data.farm_code;
+      allow delete: if signedIn() &&
+        resource.data.recipient_uid == request.auth.uid;
     }
   }
 }

@@ -8,15 +8,20 @@ import 'package:terralogic/core/terra_theme.dart';
 import 'package:terralogic/features/ai_plant_doctor/presentation/screens/plant_doctor_screen.dart';
 import 'package:terralogic/features/management/presentation/screens/notifications_screen.dart';
 import 'package:terralogic/shared/widgets/terra_drawer.dart';
+import 'package:terralogic/auth_screens.dart';
+import 'package:terralogic/signup_screen.dart';
+import 'package:terralogic/features/weather_climate/presentation/screens/weather_climate_home_screen.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   final bool isArabic;
   final Function(int) onNavigateTab;
+  final bool isGuest;
 
   const HomeDashboardScreen({
     super.key,
     required this.isArabic,
     required this.onNavigateTab,
+    this.isGuest = false,
   });
 
   @override
@@ -27,248 +32,205 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   final _tasksCollection = FirebaseFirestore.instance.collection('farm_tasks');
 
   String get _farmCode => FarmSessionService.currentFarmCode;
-  bool get _canManageTasks => FarmSessionService.isOwner;
+  bool get _canManageTasks => FarmSessionService.isManager;
 
   @override
   Widget build(BuildContext context) {
     final isAr = widget.isArabic;
-    final profile = FarmSessionService.currentUserProfile.value;
-    final farm = FarmSessionService.currentFarmData.value;
-    final userName =
-        profile?['name']?.toString() ?? (isAr ? 'المزارع' : 'Farmer');
-    final farmName =
-        farm?['farm_name']?.toString() ??
-        (isAr ? 'مزرعتي الذكية' : 'Smart Farm');
-    final role = profile?['role']?.toString().toLowerCase();
-    final roleLabel = role == 'owner'
-        ? (isAr ? 'المالك والمؤسس' : 'Farm Owner')
-        : role == 'manager'
-        ? (isAr ? 'مدير العمليات' : 'Operations Manager')
-        : (isAr ? 'عضو فريق' : 'Team Member');
 
     return Directionality(
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
-      child: Scaffold(
-        drawer: TerraDrawer(
-          isArabic: isAr,
-          onNavigateTab: widget.onNavigateTab,
-        ),
-        backgroundColor: TerraTheme.mist,
-        appBar: AppBar(
-          backgroundColor: Colors.transparent,
-          titleSpacing: 18,
-          title: Row(
-            children: [
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: Image.asset(
-                  'assets/images/logo.jpg',
-                  width: 34,
-                  height: 34,
+      child: ValueListenableBuilder<Map<String, dynamic>?>(
+        valueListenable: FarmSessionService.currentUserProfile,
+        builder: (context, _, __) => Scaffold(
+          drawer: widget.isGuest
+              ? null
+              : TerraDrawer(
+                  isArabic: isAr,
+                  onNavigateTab: widget.onNavigateTab,
                 ),
-              ),
-              const SizedBox(width: 9),
-              const Text('TerraLogic'),
-            ],
-          ),
-          actions: [
-            StreamBuilder<int>(
-              stream: FarmNotificationService.getUnreadCountStream(_farmCode),
-              builder: (context, snapshot) {
-                final count = snapshot.data ?? 0;
-                return Stack(
-                  alignment: Alignment.topRight,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.notifications_none_rounded),
-                      tooltip: isAr ? 'الإشعارات' : 'Notifications',
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => NotificationsScreen(isArabic: isAr),
-                        ),
-                      ),
+          backgroundColor: TerraTheme.mist,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            titleSpacing: 18,
+            automaticallyImplyLeading: !widget.isGuest,
+            title: Row(
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.asset(
+                    'assets/images/logo.jpg',
+                    width: 34,
+                    height: 34,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                const Text('TerraLogic'),
+              ],
+            ),
+            actions: [
+              if (widget.isGuest)
+                Padding(
+                  padding: const EdgeInsetsDirectional.only(end: 10),
+                  child: FilledButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const LoginScreen()),
                     ),
-                    if (count > 0)
-                      Positioned(
-                        top: 6,
-                        right: 6,
-                        child: Container(
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: Colors.red,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            count > 9 ? '9+' : '$count',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 9,
-                              fontWeight: FontWeight.bold,
+                    child: Text(isAr ? 'تسجيل الدخول' : 'Log in'),
+                  ),
+                )
+              else
+                StreamBuilder<int>(
+                  stream: FarmNotificationService.getUnreadCountStream(
+                    _farmCode,
+                  ),
+                  builder: (context, snapshot) {
+                    final count = snapshot.data ?? 0;
+                    return Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.notifications_none_rounded),
+                          tooltip: isAr ? 'الإشعارات' : 'Notifications',
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  NotificationsScreen(isArabic: isAr),
                             ),
                           ),
                         ),
-                      ),
-                  ],
-                );
-              },
-            ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
-          children: [
-            _buildProfileCard(
-              isAr: isAr,
-              userName: userName,
-              farmName: farmName,
-              roleLabel: roleLabel,
-            ),
-            const SizedBox(height: 22),
-            _buildSectionTitle(
-              isAr ? 'نظرة سريعة على المزرعة' : 'Farm Quick Overview',
-              Icons.analytics_outlined,
-            ),
-            const SizedBox(height: 10),
-            _buildOverviewCards(isAr),
-            const SizedBox(height: 22),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildSectionTitle(
-                  isAr ? 'قائمة المهام والأوامر' : 'Tasks & Orders',
-                  Icons.view_stream_rounded,
+                        if (count > 0)
+                          Positioned(
+                            top: 6,
+                            right: 6,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.red,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Text(
+                                count > 9 ? '9+' : '$count',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 ),
-                if (_canManageTasks)
-                  OutlinedButton.icon(
-                    onPressed: () => _showTaskEditor(),
-                    icon: const Icon(Icons.add_rounded, size: 18),
-                    label: Text(isAr ? 'إضافة' : 'Add'),
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size(0, 36),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      foregroundColor: TerraTheme.forest,
-                      side: BorderSide(
-                        color: TerraTheme.forest.withValues(alpha: .45),
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+              if (!widget.isGuest) const SizedBox(width: 8),
+            ],
+          ),
+          body: widget.isGuest || _farmCode.isEmpty
+              ? _buildGuestHome(isAr)
+              : ListView(
+                  padding: const EdgeInsets.fromLTRB(14, 4, 14, 28),
+                  children: [
+                    const SizedBox(height: 12),
+                    _buildOverviewCards(isAr),
+                    const SizedBox(height: 22),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        _buildSectionTitle(
+                          isAr ? 'قائمة المهام والأوامر' : 'Tasks & Orders',
+                          Icons.view_stream_rounded,
+                        ),
+                        if (_canManageTasks)
+                          OutlinedButton.icon(
+                            onPressed: () => _showTaskEditor(),
+                            icon: const Icon(Icons.add_rounded, size: 18),
+                            label: Text(isAr ? 'إضافة' : 'Add'),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size(0, 36),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              foregroundColor: TerraTheme.forest,
+                              side: BorderSide(
+                                color: TerraTheme.forest.withValues(alpha: .45),
+                              ),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
-                  ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            _buildTaskFeed(isAr),
-          ],
+                    const SizedBox(height: 8),
+                    _buildTaskFeed(isAr),
+                  ],
+                ),
         ),
       ),
     );
   }
 
-  Widget _buildProfileCard({
-    required bool isAr,
-    required String userName,
-    required String farmName,
-    required String roleLabel,
-  }) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 14),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF214B3C), Color(0xFF102C25)],
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-        ),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(
-            color: TerraTheme.forest.withValues(alpha: .22),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+  Widget _buildGuestHome(bool isAr) {
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(14, 18, 14, 28),
+      children: [
+        _buildOverviewCards(isAr),
+        const SizedBox(height: 18),
+        Card(
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: Colors.grey.shade200),
           ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isAr ? 'مرحباً بك، $userName' : 'Welcome back, $userName',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      farmName,
-                      style: const TextStyle(
-                        color: Color(0xFFBBD8C5),
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: .14),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.white24),
-                ),
-                child: Text(
-                  roleLabel,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 18),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: .17),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  isAr ? 'كود المزرعة:' : 'Farm code:',
-                  style: const TextStyle(
-                    color: Color(0xFFBBD8C5),
-                    fontSize: 12,
-                  ),
+                _buildSectionTitle(
+                  isAr ? 'الطقس والمناخ' : 'Weather & climate',
+                  Icons.wb_sunny_outlined,
                 ),
+                const SizedBox(height: 8),
                 Text(
-                  _farmCode.isEmpty ? '—' : _farmCode,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: .8,
+                  isAr
+                      ? 'تابع حالة الطقس والمناخ لاتخاذ قرارات أفضل لمزرعتك.'
+                      : 'Follow weather and climate conditions for better farm decisions.',
+                  style: TextStyle(color: Colors.grey.shade700, height: 1.4),
+                ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => WeatherClimateHomeScreen(isArabic: isAr),
+                    ),
+                  ),
+                  icon: const Icon(Icons.wb_sunny_rounded),
+                  label: Text(
+                    isAr ? 'عرض الطقس والمناخ' : 'View weather & climate',
                   ),
                 ),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          height: 50,
+          child: FilledButton.icon(
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CreateFarmScreen()),
+            ),
+            icon: const Icon(Icons.add_business_rounded),
+            label: Text(isAr ? 'إنشاء مزرعة' : 'Create a farm'),
+          ),
+        ),
+      ],
     );
   }
 
@@ -290,125 +252,76 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   Widget _buildOverviewCards(bool isAr) {
-    final cards = <Widget>[
-      _buildCountCard(
-            isAr ? 'طبيب النبات' : 'Plant Doctor',
-            Icons.camera_alt_rounded,
-            const Color(0xFF2E7D32),
-            'diagnosis_history',
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => PlantDoctorScreen(isArabic: isAr),
-                ),
-              );
-            },
-          ),
-      if (FarmSessionService.isOwner)
-        _buildCountCard(
-            isAr ? 'كادر المزرعة' : 'Farm Staff',
-            Icons.groups_rounded,
-            TerraTheme.blue,
-            'workers',
-            onTap: () => widget.onNavigateTab(1),
-          ),
-      _buildCountCard(
-            isAr ? 'المحاصيل' : 'Crops',
-            Icons.eco_rounded,
-            TerraTheme.forest,
-            'crops',
-            onTap: () => widget.onNavigateTab(1),
-          ),
-    ];
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (var index = 0; index < cards.length; index++) ...[
-          if (index > 0) const SizedBox(width: 8),
-          Expanded(child: cards[index]),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildCountCard(
-    String label,
-    IconData icon,
-    Color color,
-    String collection, {
-    VoidCallback? onTap,
-  }) {
-    final stream = _farmCode.isEmpty
-        ? FirebaseFirestore.instance.collection(collection).limit(0).snapshots()
-        : FirebaseFirestore.instance
-              .collection(collection)
-              .where('farm_code', isEqualTo: _farmCode)
-              .snapshots();
-    return StreamBuilder<QuerySnapshot>(
-      stream: stream,
-      builder: (context, snapshot) {
-        final cardContent = Container(
-          height: 104,
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 11),
-          decoration: BoxDecoration(
-            color: TerraTheme.paper,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: onTap != null
-                  ? color.withValues(alpha: 0.35)
-                  : TerraTheme.line,
-              width: onTap != null ? 1.4 : 1.0,
+    return Card(
+      elevation: 0,
+      margin: EdgeInsets.zero,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(18),
+        side: BorderSide(color: Colors.grey.shade200),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 18, 14, 14),
+        child: Column(
+          children: [
+            const CircleAvatar(
+              radius: 25,
+              backgroundColor: Color(0xFFE8F5E9),
+              child: Icon(
+                Icons.camera_alt_rounded,
+                color: Color(0xFF2E7D32),
+                size: 27,
+              ),
             ),
-            boxShadow: [
-              BoxShadow(
-                color: (onTap != null ? color : TerraTheme.ink)
-                    .withValues(alpha: .05),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+            const SizedBox(height: 10),
+            Text(
+              isAr ? 'شخّص نبتتك بسهولة' : 'Diagnose your plant easily',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.w800,
+                color: TerraTheme.ink,
               ),
-            ],
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icon, color: color, size: 25),
-              const SizedBox(height: 5),
-              Text(
-                '${snapshot.data?.docs.length ?? 0}',
-                style: TextStyle(
-                  color: color,
-                  fontSize: 17,
-                  fontWeight: FontWeight.w800,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              isAr
+                  ? 'التقط صورة للنبات واحصل على التشخيص والعلاج'
+                  : 'Take a photo to get a diagnosis and treatment',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PlantDoctorScreen(
+                      isArabic: isAr,
+                      openDiagnosisOnStart: true,
+                    ),
+                  ),
+                ),
+                icon: const Icon(Icons.camera_alt_rounded, size: 17),
+                label: Text(
+                  isAr
+                      ? 'صور نبتتك وابدأ التشخيص'
+                      : 'Take a photo and diagnose',
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2E7D32),
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  minimumSize: const Size.fromHeight(40),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
                 ),
               ),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: onTap != null ? color : Colors.grey.shade600,
-                  fontSize: 10,
-                  fontWeight:
-                      onTap != null ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
-            ],
-          ),
-        );
-
-        if (onTap == null) return cardContent;
-
-        return Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(16),
-            onTap: onTap,
-            child: cardContent,
-          ),
-        );
-      },
+            ),
+          ],
+        ),
+      ),
     );
   }
 

@@ -151,30 +151,30 @@ abstract final class TerraTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: scheme,
-      scaffoldBackgroundColor: const Color(0xFF10231E),
+      scaffoldBackgroundColor: const Color(0xFF0B100E),
       textTheme: ThemeData.dark().textTheme.apply(
         bodyColor: const Color(0xFFE6EFE8),
         displayColor: const Color(0xFFE6EFE8),
       ),
       appBarTheme: const AppBarTheme(
-        backgroundColor: Color(0xFF10231E),
-        foregroundColor: Colors.white,
+        backgroundColor: Color(0xFF0B100E),
+        foregroundColor: Color(0xFFD8F3DE),
         elevation: 0,
         centerTitle: true,
       ),
       cardTheme: CardThemeData(
-        color: const Color(0xFF18352D),
+        color: const Color(0xFF121B17),
         elevation: 1,
         margin: const EdgeInsets.symmetric(vertical: 6),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
       dialogTheme: DialogThemeData(
-        backgroundColor: const Color(0xFF18352D),
+        backgroundColor: const Color(0xFF121B17),
         surfaceTintColor: Colors.transparent,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
       ),
       bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: Color(0xFF18352D),
+        backgroundColor: Color(0xFF121B17),
         surfaceTintColor: Colors.transparent,
         showDragHandle: true,
       ),
@@ -191,7 +191,7 @@ abstract final class TerraTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: const Color(0xFF18352D),
+        fillColor: const Color(0xFF121B17),
         border: _inputBorder(const Color(0xFF315A4D)),
         enabledBorder: _inputBorder(const Color(0xFF315A4D)),
         focusedBorder: _inputBorder(sage, width: 1.8),

@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../../../../core/farm_session_service.dart';
 import '../../../../core/terra_theme.dart';
+import '../../../../shared/widgets/farm_empty_state.dart';
 
 class AnalyticsFinanceScreen extends StatefulWidget {
   final bool isArabic;
@@ -102,168 +103,173 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
         ),
-        body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
-          children: [
-            // 1. بطاقة الرسمة الأولى: التكلفة مقابل المبيعات
-            Card(
-              elevation: 1,
-              shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            isAr
-                                ? "📊 التكلفة مقابل المبيعات لكل محصول"
-                                : "📊 Cost vs Sales per Crop",
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: Color(0xFF1B5E20),
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            _buildLegendBadge(
-                              Colors.blueGrey.shade400,
-                              isAr ? "التكلفة" : "Cost",
-                            ),
-                            const SizedBox(width: 8),
-                            _buildLegendBadge(
-                              const Color(0xFF2E7D32),
-                              isAr ? "المبيعات" : "Sales",
-                            ),
-                          ],
-                        ),
-                      ],
+        body: FarmSessionService.currentFarmCode.isEmpty
+            ? FarmEmptyState(isArabic: isAr)
+            : ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 30),
+                children: [
+                  // 1. بطاقة الرسمة الأولى: التكلفة مقابل المبيعات
+                  Card(
+                    elevation: 1,
+                    shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.grey.shade200),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(
-                      height: 240,
-                      child: _buildProfitProductionBarChart(isAr),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
-
-            // 2. بطاقة الرسمة الثانية: اتجاه الربحية عبر الزمن
-            Card(
-              elevation: 1,
-              shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          isAr
-                              ? "📈 منحنى صافي الأرباح"
-                              : "📈 Net Profit Trend",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Color(0xFF1B5E20),
-                          ),
-                        ),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFFE8F5E9),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: DropdownButton<String>(
-                            value: viewType,
-                            underline: const SizedBox(),
-                            icon: const Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: Color(0xFF2E7D32),
-                              size: 18,
-                            ),
-                            items: [
-                              DropdownMenuItem(
-                                value: 'شهر',
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
                                 child: Text(
-                                  isAr ? 'عرض شهري' : 'Monthly View',
+                                  isAr
+                                      ? "📊 التكلفة مقابل المبيعات لكل محصول"
+                                      : "📊 Cost vs Sales per Crop",
                                   style: const TextStyle(
-                                    fontSize: 12,
                                     fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E7D32),
+                                    fontSize: 14,
+                                    color: Color(0xFF1B5E20),
                                   ),
                                 ),
                               ),
-                              DropdownMenuItem(
-                                value: 'سنة',
-                                child: Text(
-                                  isAr ? 'عرض سنوي' : 'Yearly View',
-                                  style: const TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                    color: Color(0xFF2E7D32),
+                              Row(
+                                children: [
+                                  _buildLegendBadge(
+                                    Colors.blueGrey.shade400,
+                                    isAr ? "التكلفة" : "Cost",
                                   ),
+                                  const SizedBox(width: 8),
+                                  _buildLegendBadge(
+                                    const Color(0xFF2E7D32),
+                                    isAr ? "المبيعات" : "Sales",
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 240,
+                            child: _buildProfitProductionBarChart(isAr),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+
+                  // 2. بطاقة الرسمة الثانية: اتجاه الربحية عبر الزمن
+                  Card(
+                    elevation: 1,
+                    shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                isAr
+                                    ? "📈 منحنى صافي الأرباح"
+                                    : "📈 Net Profit Trend",
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Color(0xFF1B5E20),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFFE8F5E9),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: DropdownButton<String>(
+                                  value: viewType,
+                                  underline: const SizedBox(),
+                                  icon: const Icon(
+                                    Icons.keyboard_arrow_down_rounded,
+                                    color: Color(0xFF2E7D32),
+                                    size: 18,
+                                  ),
+                                  items: [
+                                    DropdownMenuItem(
+                                      value: 'شهر',
+                                      child: Text(
+                                        isAr ? 'عرض شهري' : 'Monthly View',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF2E7D32),
+                                        ),
+                                      ),
+                                    ),
+                                    DropdownMenuItem(
+                                      value: 'سنة',
+                                      child: Text(
+                                        isAr ? 'عرض سنوي' : 'Yearly View',
+                                        style: const TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF2E7D32),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => viewType = val);
+                                      if (val == 'سنة') {
+                                        _showYearPicker(context, isAr);
+                                      }
+                                      if (val == 'شهر') {
+                                        _showMonthPicker(context);
+                                      }
+                                    }
+                                  },
                                 ),
                               ),
                             ],
-                            onChanged: (val) {
-                              if (val != null) {
-                                setState(() => viewType = val);
-                                if (val == 'سنة') {
-                                  _showYearPicker(context, isAr);
-                                }
-                                if (val == 'شهر') {
-                                  _showMonthPicker(context);
-                                }
-                              }
-                            },
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            height: 220,
+                            child: _buildCropTypeChart(isAr),
+                          ),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
-                    SizedBox(height: 220, child: _buildCropTypeChart(isAr)),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 12),
+                  ),
+                  const SizedBox(height: 12),
 
-            // 3. بطاقة الرسمة الثالثة: توزيع الإنتاج
-            Card(
-              elevation: 1,
-              shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: BorderSide(color: Colors.grey.shade200),
+                  // 3. بطاقة الرسمة الثالثة: توزيع الإنتاج
+                  Card(
+                    elevation: 1,
+                    shadowColor: TerraTheme.ink.withValues(alpha: 0.07),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      side: BorderSide(color: Colors.grey.shade200),
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: _buildCropDistributionChart(isAr),
+                    ),
+                  ),
+                ],
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: _buildCropDistributionChart(isAr),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -290,7 +296,7 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
     final farmCode = FarmSessionService.currentFarmCode;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
-          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          ? const Stream<QuerySnapshot>.empty()
           : FirebaseFirestore.instance
                 .collection('crops')
                 .where('farm_code', isEqualTo: farmCode)
@@ -429,7 +435,7 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
     final farmCode = FarmSessionService.currentFarmCode;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
-          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          ? const Stream<QuerySnapshot>.empty()
           : FirebaseFirestore.instance
                 .collection('crops')
                 .where('farm_code', isEqualTo: farmCode)
@@ -634,7 +640,7 @@ class _AnalyticsFinanceScreenState extends State<AnalyticsFinanceScreen> {
     final farmCode = FarmSessionService.currentFarmCode;
     return StreamBuilder<QuerySnapshot>(
       stream: farmCode.isEmpty
-          ? FirebaseFirestore.instance.collection('crops').limit(0).snapshots()
+          ? const Stream<QuerySnapshot>.empty()
           : FirebaseFirestore.instance
                 .collection('crops')
                 .where('farm_code', isEqualTo: farmCode)

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:terralogic/core/farm_session_service.dart';
+import 'package:terralogic/shared/widgets/farm_empty_state.dart';
 
 class WorkersScreen extends StatefulWidget {
   const WorkersScreen({super.key});
@@ -15,7 +16,7 @@ class _WorkersScreenState extends State<WorkersScreen> {
   final _salaryController = TextEditingController();
   String _selectedRole = 'worker'; // worker أو admin
   bool isArabic = true;
-  
+
   // جلب كود المزرعة الخاص بالـ Owner الحالي لقراءة عمال مزرعته فقط
   String? currentFarmCode;
 
@@ -28,7 +29,10 @@ class _WorkersScreenState extends State<WorkersScreen> {
   Future<void> _loadCurrentFarmCode() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
       if (userDoc.exists && mounted) {
         setState(() {
           currentFarmCode = userDoc['farm_code'];
@@ -48,7 +52,11 @@ class _WorkersScreenState extends State<WorkersScreen> {
   Future<void> _addWorker() async {
     if (_nameController.text.isEmpty || _salaryController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(isArabic ? 'الرجاء تعبئة جميع الحقول' : 'Please fill all fields')),
+        SnackBar(
+          content: Text(
+            isArabic ? 'الرجاء تعبئة جميع الحقول' : 'Please fill all fields',
+          ),
+        ),
       );
       return;
     }
@@ -66,17 +74,21 @@ class _WorkersScreenState extends State<WorkersScreen> {
       _salaryController.clear();
       if (!mounted) return;
       Navigator.pop(context); // إغلاق النافذة المنبثقة
-      
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $e')));
     }
   }
 
   // دالة تعديل بيانات العامل (الراتب أو الصلاحية)
-  Future<void> _editWorker(String docId, String currentName, double currentSalary, String currentRole) async {
+  Future<void> _editWorker(
+    String docId,
+    String currentName,
+    double currentSalary,
+    String currentRole,
+  ) async {
     _nameController.text = currentName;
     _salaryController.text = currentSalary.toString();
     _selectedRole = currentRole;
@@ -90,12 +102,16 @@ class _WorkersScreenState extends State<WorkersScreen> {
           children: [
             TextField(
               controller: _nameController,
-              decoration: InputDecoration(labelText: isArabic ? 'الاسم' : 'Name'),
+              decoration: InputDecoration(
+                labelText: isArabic ? 'الاسم' : 'Name',
+              ),
             ),
             TextField(
               controller: _salaryController,
               keyboardType: TextInputType.number,
-              decoration: InputDecoration(labelText: isArabic ? 'الراتب الشهري' : 'Salary'),
+              decoration: InputDecoration(
+                labelText: isArabic ? 'الراتب الشهري' : 'Salary',
+              ),
             ),
           ],
         ),
@@ -106,10 +122,13 @@ class _WorkersScreenState extends State<WorkersScreen> {
           ),
           ElevatedButton(
             onPressed: () async {
-              await FirebaseFirestore.instance.collection('workers').doc(docId).update({
-                'name': _nameController.text.trim(),
-                'salary': double.parse(_salaryController.text.trim()),
-              });
+              await FirebaseFirestore.instance
+                  .collection('workers')
+                  .doc(docId)
+                  .update({
+                    'name': _nameController.text.trim(),
+                    'salary': double.parse(_salaryController.text.trim()),
+                  });
               if (!mounted || !context.mounted) return;
               _nameController.clear();
               _salaryController.clear();
@@ -124,16 +143,18 @@ class _WorkersScreenState extends State<WorkersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!FarmSessionService.isOwner) {
+    if (!FarmSessionService.isManager) {
       return Scaffold(
-        appBar: AppBar(title: Text(isArabic ? 'إدارة العمال' : 'Worker management')),
+        appBar: AppBar(
+          title: Text(isArabic ? 'إدارة العمال' : 'Worker management'),
+        ),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24),
             child: Text(
               isArabic
-                  ? 'بيانات الفريق متاحة للمالك فقط حتى اعتماد نطاقات تفويض المدير.'
-                  : 'Team records are owner-only until manager scopes are configured.',
+                  ? 'إدارة بيانات الفريق متاحة للمالك والمدير فقط.'
+                  : 'Team records are available to owners and managers only.',
               textAlign: TextAlign.center,
             ),
           ),
@@ -141,7 +162,15 @@ class _WorkersScreenState extends State<WorkersScreen> {
       );
     }
     if (currentFarmCode == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator(color: Colors.green)));
+      return Scaffold(body: FarmEmptyState(isArabic: isArabic));
+    }
+    if (currentFarmCode!.trim().isEmpty) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(isArabic ? 'إدارة شؤون العمال' : 'Workers Management'),
+        ),
+        body: FarmEmptyState(isArabic: isArabic),
+      );
     }
 
     return Scaffold(
@@ -161,11 +190,19 @@ class _WorkersScreenState extends State<WorkersScreen> {
             .where('farm_code', isEqualTo: currentFarmCode)
             .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
           var docs = snapshot.data!.docs;
           if (docs.isEmpty) {
-            return Center(child: Text(isArabic ? 'لا يوجد عمال مضافين حالياً' : 'No workers added yet'));
+            return Center(
+              child: Text(
+                isArabic
+                    ? 'لا يوجد عمال مضافين حالياً'
+                    : 'No workers added yet',
+              ),
+            );
           }
 
           return ListView.builder(
@@ -175,15 +212,28 @@ class _WorkersScreenState extends State<WorkersScreen> {
               return Card(
                 margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 child: ListTile(
-                  leading: const CircleAvatar(backgroundColor: Colors.green, child: Icon(Icons.person, color: Colors.white)),
-                  title: Text(worker['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-                  subtitle: Text('${isArabic ? 'الراتب:' : 'Salary:'} \$${worker['salary']}'),
+                  leading: const CircleAvatar(
+                    backgroundColor: Colors.green,
+                    child: Icon(Icons.person, color: Colors.white),
+                  ),
+                  title: Text(
+                    worker['name'],
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${isArabic ? 'الراتب:' : 'Salary:'} \$${worker['salary']}',
+                  ),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () => _editWorker(worker.id, worker['name'], worker['salary'], worker['role']),
+                        onPressed: () => _editWorker(
+                          worker.id,
+                          worker['name'],
+                          worker['salary'],
+                          worker['role'],
+                        ),
                       ),
                     ],
                   ),
@@ -202,15 +252,34 @@ class _WorkersScreenState extends State<WorkersScreen> {
       context: context,
       isScrollControlled: true,
       builder: (context) => Padding(
-        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 24, right: 24, top: 24),
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          left: 24,
+          right: 24,
+          top: 24,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(isArabic ? 'إضافة عامل جديد للمزرعة' : 'Add New Worker', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(
+              isArabic ? 'إضافة عامل جديد للمزرعة' : 'Add New Worker',
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 20),
-            TextField(controller: _nameController, decoration: InputDecoration(labelText: isArabic ? 'اسم العامل الكامل' : 'Worker Name')),
+            TextField(
+              controller: _nameController,
+              decoration: InputDecoration(
+                labelText: isArabic ? 'اسم العامل الكامل' : 'Worker Name',
+              ),
+            ),
             const SizedBox(height: 15),
-            TextField(controller: _salaryController, keyboardType: TextInputType.number, decoration: InputDecoration(labelText: isArabic ? 'الراتب الشهري (\$)' : 'Monthly Salary')),
+            TextField(
+              controller: _salaryController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                labelText: isArabic ? 'الراتب الشهري (\$)' : 'Monthly Salary',
+              ),
+            ),
             const SizedBox(height: 30),
             SizedBox(
               width: double.infinity,
@@ -218,7 +287,10 @@ class _WorkersScreenState extends State<WorkersScreen> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
                 onPressed: _addWorker,
-                child: Text(isArabic ? 'إضافة العامل الآن' : 'Add Worker', style: const TextStyle(color: Colors.white)),
+                child: Text(
+                  isArabic ? 'إضافة العامل الآن' : 'Add Worker',
+                  style: const TextStyle(color: Colors.white),
+                ),
               ),
             ),
             const SizedBox(height: 20),

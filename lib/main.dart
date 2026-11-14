@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'core/language_controller.dart';
 import 'core/farm_session_service.dart';
 import 'core/terra_theme.dart';
-import 'auth_screens.dart';
 import 'features/home/presentation/screens/home_dashboard_screen.dart';
 import 'features/management/presentation/screens/data_management_screen.dart';
 import 'features/weather_climate/presentation/screens/weather_climate_home_screen.dart';
 import 'package:terralogic/features/analytics_finance/presentation/screens/analytics_finance_screen.dart';
+import 'package:terralogic/shared/widgets/farm_empty_state.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,7 +35,7 @@ class TerraLogicApp extends StatelessWidget {
               theme: TerraTheme.light(),
               darkTheme: TerraTheme.dark(),
               themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-              home: const SplashScreen(),
+              home: const _AuthGate(),
             );
           },
         );
@@ -43,8 +44,82 @@ class TerraLogicApp extends StatelessWidget {
   }
 }
 
+class _AuthGate extends StatelessWidget {
+  const _AuthGate();
+
+  @override
+  Widget build(BuildContext context) {
+    if (Firebase.apps.isEmpty) {
+      return const _AuthLoadingScreen();
+    }
+
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const _AuthStateError();
+        }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const _AuthLoadingScreen();
+        }
+        return snapshot.data == null
+            ? const MainNavigationScreen(isGuest: true)
+            : const MainNavigationScreen();
+      },
+    );
+  }
+}
+
+class _AuthLoadingScreen extends StatelessWidget {
+  const _AuthLoadingScreen();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: TerraTheme.mist,
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image(
+              image: AssetImage('assets/images/logo.jpg'),
+              width: 72,
+              height: 72,
+            ),
+            SizedBox(height: 12),
+            Text(
+              'TerraLogic',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: TerraTheme.forest,
+              ),
+            ),
+            SizedBox(height: 20),
+            CircularProgressIndicator(color: TerraTheme.forest),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AuthStateError extends StatelessWidget {
+  const _AuthStateError();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: TerraTheme.mist,
+      body: Center(child: Text('تعذر التحقق من حالة تسجيل الدخول')),
+    );
+  }
+}
+
 class MainNavigationScreen extends StatefulWidget {
-  const MainNavigationScreen({super.key});
+  final bool isGuest;
+
+  const MainNavigationScreen({super.key, this.isGuest = false});
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -63,14 +138,18 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       valueListenable: AppLanguage.isArabic,
       builder: (context, isArabic, _) {
         final canViewFinance = FarmSessionService.canViewFinancials;
+        final hasFarm = FarmSessionService.currentFarmCode.trim().isNotEmpty;
 
         final List<Widget> screens = [
           HomeDashboardScreen(
             isArabic: isArabic,
             onNavigateTab: _navigateToTab,
+            isGuest: widget.isGuest,
           ),
           DataManagementScreen(isArabic: isArabic),
-          canViewFinance
+          !hasFarm
+              ? FarmEmptyState(isArabic: isArabic)
+              : canViewFinance
               ? AnalyticsFinanceScreen(isArabic: isArabic)
               : _buildRestrictedFinanceView(isArabic),
           WeatherClimateHomeScreen(isArabic: isArabic),
@@ -81,46 +160,48 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Scaffold(
             // لا يوجد AppBar هنا حتى لا يتكرر الشريط العلوي مع الشاشات الداخلية
             body: screens[_currentIndex.clamp(0, screens.length - 1)],
-            bottomNavigationBar: Container(
-              decoration: const BoxDecoration(
-                color: TerraTheme.paper,
-                border: Border(top: BorderSide(color: TerraTheme.line)),
-              ),
-              child: SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildNavItem(
-                        0,
-                        Icons.home_rounded,
-                        isArabic ? 'الرئيسية' : 'Home',
-                        isArabic,
+            bottomNavigationBar: widget.isGuest
+                ? null
+                : Container(
+                    decoration: const BoxDecoration(
+                      color: TerraTheme.paper,
+                      border: Border(top: BorderSide(color: TerraTheme.line)),
+                    ),
+                    child: SafeArea(
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceAround,
+                          children: [
+                            _buildNavItem(
+                              0,
+                              Icons.home_rounded,
+                              isArabic ? 'الرئيسية' : 'Home',
+                              isArabic,
+                            ),
+                            _buildNavItem(
+                              1,
+                              Icons.agriculture_rounded,
+                              isArabic ? 'الإدارة' : 'Management',
+                              isArabic,
+                            ),
+                            _buildNavItem(
+                              2,
+                              Icons.bar_chart_rounded,
+                              isArabic ? 'المالية' : 'Finance',
+                              isArabic,
+                            ),
+                            _buildNavItem(
+                              3,
+                              Icons.wb_sunny_rounded,
+                              isArabic ? 'الطقس' : 'Weather',
+                              isArabic,
+                            ),
+                          ],
+                        ),
                       ),
-                      _buildNavItem(
-                        1,
-                        Icons.agriculture_rounded,
-                        isArabic ? 'الإدارة' : 'Management',
-                        isArabic,
-                      ),
-                      _buildNavItem(
-                        2,
-                        Icons.bar_chart_rounded,
-                        isArabic ? 'المالية' : 'Finance',
-                        isArabic,
-                      ),
-                      _buildNavItem(
-                        3,
-                        Icons.wb_sunny_rounded,
-                        isArabic ? 'الطقس' : 'Weather',
-                        isArabic,
-                      ),
-                    ],
+                    ),
                   ),
-                ),
-              ),
-            ),
           ),
         );
       },

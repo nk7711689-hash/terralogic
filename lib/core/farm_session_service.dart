@@ -133,14 +133,12 @@ class FarmSessionService {
 
   /// هل يستطيع المستخدم الحالي رؤية المالية؟
   static bool get canViewFinancials {
-    // The current model has no explicit manager financial grant or private
-    // salary records, so access remains owner-only until that model exists.
-    return isOwner;
+    return isManager;
   }
 
   static bool get canSaveDiagnosis {
     final role = currentUserProfile.value?['role']?.toString().toLowerCase();
-    if (role == 'owner') return true;
+    if (role == 'owner' || role == 'manager' || role == 'admin') return true;
     return role == 'worker' && allowWorkerDiagnosis.value;
   }
 
