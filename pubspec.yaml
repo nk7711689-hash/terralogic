@@ -24,6 +24,7 @@ dependencies:
   html: ^0.15.4
   shared_preferences: ^2.2.0 # لحفظ الأسعار محلياً
   url_launcher: ^6.3.2
+  flutter_svg: ^2.0.17
 
 dev_dependencies:
   flutter_test:
@@ -35,6 +36,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/logo.jpg
+    - assets/images/crops/
     - assets/plant_disease_model.tflite
     - assets/labels.txt
 

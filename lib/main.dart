@@ -146,9 +146,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             onNavigateTab: _navigateToTab,
             isGuest: widget.isGuest,
           ),
-          DataManagementScreen(isArabic: isArabic),
-          !hasFarm
-              ? FarmEmptyState(isArabic: isArabic)
+          widget.isGuest || !hasFarm
+              ? FarmEmptyState(isArabic: isArabic, showLoginButton: true)
+              : DataManagementScreen(isArabic: isArabic),
+          widget.isGuest || !hasFarm
+              ? FarmEmptyState(isArabic: isArabic, showLoginButton: true)
               : canViewFinance
               ? AnalyticsFinanceScreen(isArabic: isArabic)
               : _buildRestrictedFinanceView(isArabic),
@@ -160,48 +162,46 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: Scaffold(
             // لا يوجد AppBar هنا حتى لا يتكرر الشريط العلوي مع الشاشات الداخلية
             body: screens[_currentIndex.clamp(0, screens.length - 1)],
-            bottomNavigationBar: widget.isGuest
-                ? null
-                : Container(
-                    decoration: const BoxDecoration(
-                      color: TerraTheme.paper,
-                      border: Border(top: BorderSide(color: TerraTheme.line)),
-                    ),
-                    child: SafeArea(
-                      child: Padding(
-                        padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceAround,
-                          children: [
-                            _buildNavItem(
-                              0,
-                              Icons.home_rounded,
-                              isArabic ? 'الرئيسية' : 'Home',
-                              isArabic,
-                            ),
-                            _buildNavItem(
-                              1,
-                              Icons.agriculture_rounded,
-                              isArabic ? 'الإدارة' : 'Management',
-                              isArabic,
-                            ),
-                            _buildNavItem(
-                              2,
-                              Icons.bar_chart_rounded,
-                              isArabic ? 'المالية' : 'Finance',
-                              isArabic,
-                            ),
-                            _buildNavItem(
-                              3,
-                              Icons.wb_sunny_rounded,
-                              isArabic ? 'الطقس' : 'Weather',
-                              isArabic,
-                            ),
-                          ],
-                        ),
+            bottomNavigationBar: Container(
+              decoration: const BoxDecoration(
+                color: TerraTheme.paper,
+                border: Border(top: BorderSide(color: TerraTheme.line)),
+              ),
+              child: SafeArea(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 8, 8, 7),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(
+                        0,
+                        Icons.home_rounded,
+                        isArabic ? 'الرئيسية' : 'Home',
+                        isArabic,
                       ),
-                    ),
+                      _buildNavItem(
+                        1,
+                        Icons.agriculture_rounded,
+                        isArabic ? 'الإدارة' : 'Management',
+                        isArabic,
+                      ),
+                      _buildNavItem(
+                        2,
+                        Icons.bar_chart_rounded,
+                        isArabic ? 'المالية' : 'Finance',
+                        isArabic,
+                      ),
+                      _buildNavItem(
+                        3,
+                        Icons.wb_sunny_rounded,
+                        isArabic ? 'الطقس' : 'Weather',
+                        isArabic,
+                      ),
+                    ],
                   ),
+                ),
+              ),
+            ),
           ),
         );
       },

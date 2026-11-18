@@ -4,6 +4,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -2686,10 +2687,15 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
         appBar: AppBar(
           leading: Builder(
             builder: (context) => IconButton(
-              icon: _buildTopAvatar(
-                profilePhoto ?? FirebaseAuth.instance.currentUser?.photoURL,
-              ),
-              tooltip: isAr ? 'الحساب' : 'Account',
+              icon: widget.openDiagnosisOnStart
+                  ? const Icon(Icons.arrow_back_rounded)
+                  : _buildTopAvatar(
+                      profilePhoto ??
+                          FirebaseAuth.instance.currentUser?.photoURL,
+                    ),
+              tooltip: widget.openDiagnosisOnStart
+                  ? (isAr ? 'العودة للرئيسية' : 'Back to home')
+                  : (isAr ? 'الحساب' : 'Account'),
               onPressed: widget.openDiagnosisOnStart
                   ? _closeDiagnosis
                   : () => Scaffold.of(context).openDrawer(),
@@ -2913,6 +2919,12 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                             itemBuilder: (context, index) {
                               final crop = _cropOptions[index];
                               final active = crop == _selectedCropType;
+                              final colorScheme = Theme.of(context).colorScheme;
+                              final inactiveIconColor =
+                                  Theme.of(context).brightness ==
+                                      Brightness.dark
+                                  ? colorScheme.primary
+                                  : _sage;
                               final label = crop == 'Auto'
                                   ? (isAr ? 'الكل' : 'Auto')
                                   : (isAr
@@ -2927,12 +2939,12 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                                   width: 78,
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
-                                    color: active ? _sage : Colors.white,
+                                    color: active ? _sage : colorScheme.surface,
                                     borderRadius: BorderRadius.circular(16),
                                     border: Border.all(
                                       color: active
                                           ? _sage
-                                          : _sage.withValues(alpha: .18),
+                                          : colorScheme.outlineVariant,
                                     ),
                                   ),
                                   child: Column(
@@ -2940,7 +2952,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                                     children: [
                                       _CropIcon(
                                         crop: crop,
-                                        color: active ? Colors.white : _sage,
+                                        color: active
+                                            ? const Color(0xFFD8F3DE)
+                                            : inactiveIconColor,
                                       ),
                                       const SizedBox(height: 6),
                                       Text(
@@ -2948,7 +2962,9 @@ class _PlantDoctorScreenState extends State<PlantDoctorScreen> {
                                         maxLines: 1,
                                         overflow: TextOverflow.ellipsis,
                                         style: TextStyle(
-                                          color: active ? Colors.white : _mint,
+                                          color: active
+                                              ? Colors.white
+                                              : colorScheme.onSurface,
                                           fontSize: 11,
                                           fontWeight: active
                                               ? FontWeight.bold
@@ -3734,121 +3750,19 @@ class _CropIcon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: const Size(30, 30),
-      painter: _CropIconPainter(crop: crop, color: color),
+    if (crop == 'Auto') {
+      return Icon(Icons.auto_awesome_rounded, color: color, size: 30);
+    }
+
+    return Semantics(
+      label: crop,
+      image: true,
+      child: SvgPicture.asset(
+        'assets/images/crops/${crop.toLowerCase()}.svg',
+        width: 30,
+        height: 30,
+        colorFilter: ColorFilter.mode(color, BlendMode.srcIn),
+      ),
     );
   }
-}
-
-class _CropIconPainter extends CustomPainter {
-  final String crop;
-  final Color color;
-
-  const _CropIconPainter({required this.crop, required this.color});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.8
-      ..strokeCap = StrokeCap.round
-      ..strokeJoin = StrokeJoin.round;
-    final center = Offset(size.width / 2, size.height / 2);
-
-    switch (crop) {
-      case 'Citrus':
-        canvas.drawCircle(center.translate(1, 3), 8, paint);
-        canvas.drawOval(
-          Rect.fromCenter(
-            center: center.translate(5, -8),
-            width: 10,
-            height: 5,
-          ),
-          paint,
-        );
-        canvas.drawLine(
-          center.translate(0, -5),
-          center.translate(4, -8),
-          paint,
-        );
-        break;
-      case 'Olive':
-        canvas.drawLine(
-          center.translate(-9, 8),
-          center.translate(9, -8),
-          paint,
-        );
-        for (final offset in <Offset>[
-          center.translate(-5, 3),
-          center.translate(-1, -1),
-          center.translate(3, -5),
-        ]) {
-          canvas.drawOval(
-            Rect.fromCenter(center: offset, width: 7, height: 3.5),
-            paint,
-          );
-        }
-        canvas.drawCircle(center.translate(7, -7), 2, paint);
-        break;
-      case 'Potato':
-        final potato = Path()
-          ..moveTo(7, -8)
-          ..cubicTo(13, -5, 11, 5, 5, 9)
-          ..cubicTo(-1, 12, -10, 7, -9, 0)
-          ..cubicTo(-8, -8, 1, -11, 7, -8);
-        canvas.drawPath(potato.shift(center), paint);
-        canvas.drawCircle(center.translate(-3, -2), 1, paint);
-        canvas.drawCircle(center.translate(4, 3), 1, paint);
-        break;
-      case 'Tomato':
-        canvas.drawCircle(center.translate(0, 3), 8, paint);
-        final crown = Path()
-          ..moveTo(center.dx - 7, center.dy - 3)
-          ..lineTo(center.dx - 3, center.dy - 8)
-          ..lineTo(center.dx, center.dy - 4)
-          ..lineTo(center.dx + 3, center.dy - 8)
-          ..lineTo(center.dx + 7, center.dy - 3);
-        canvas.drawPath(crown, paint);
-        break;
-      case 'Wheat':
-        canvas.drawLine(
-          center.translate(0, 11),
-          center.translate(0, -10),
-          paint,
-        );
-        for (var i = 0; i < 4; i++) {
-          final y = center.dy - 7 + i * 5;
-          canvas.drawOval(
-            Rect.fromCenter(
-              center: Offset(center.dx - 4, y),
-              width: 8,
-              height: 3,
-            ),
-            paint,
-          );
-          canvas.drawOval(
-            Rect.fromCenter(
-              center: Offset(center.dx + 4, y - 2),
-              width: 8,
-              height: 3,
-            ),
-            paint,
-          );
-        }
-        break;
-      default:
-        canvas.drawCircle(center, 9, paint);
-        canvas.drawLine(
-          center.translate(-5, 5),
-          center.translate(5, -5),
-          paint,
-        );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _CropIconPainter oldDelegate) =>
-      oldDelegate.crop != crop || oldDelegate.color != color;
 }

@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import 'package:terralogic/core/farm_session_service.dart';
+import 'package:terralogic/core/language_controller.dart';
 import 'package:terralogic/core/notification_service.dart';
 import 'package:terralogic/core/terra_theme.dart';
 import 'package:terralogic/features/ai_plant_doctor/presentation/screens/plant_doctor_screen.dart';
@@ -10,7 +11,6 @@ import 'package:terralogic/features/management/presentation/screens/notification
 import 'package:terralogic/shared/widgets/terra_drawer.dart';
 import 'package:terralogic/auth_screens.dart';
 import 'package:terralogic/signup_screen.dart';
-import 'package:terralogic/features/weather_climate/presentation/screens/weather_climate_home_screen.dart';
 
 class HomeDashboardScreen extends StatefulWidget {
   final bool isArabic;
@@ -42,7 +42,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
       textDirection: isAr ? TextDirection.rtl : TextDirection.ltr,
       child: ValueListenableBuilder<Map<String, dynamic>?>(
         valueListenable: FarmSessionService.currentUserProfile,
-        builder: (context, _, __) => Scaffold(
+        builder: (context, profile, __) => Scaffold(
           drawer: widget.isGuest
               ? null
               : TerraDrawer(
@@ -52,9 +52,15 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
           backgroundColor: TerraTheme.mist,
           appBar: AppBar(
             backgroundColor: Colors.transparent,
-            titleSpacing: 18,
-            automaticallyImplyLeading: !widget.isGuest,
+            centerTitle: true,
+            titleSpacing: 8,
+            automaticallyImplyLeading: false,
+            leadingWidth: widget.isGuest && isAr ? 118 : null,
+            leading: widget.isGuest
+                ? (isAr ? _buildGuestLoginButton(context, isAr) : null)
+                : (isAr ? _buildAvatarButton(profile, isAr) : null),
             title: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.circular(10),
@@ -69,18 +75,14 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               ],
             ),
             actions: [
-              if (widget.isGuest)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(end: 10),
-                  child: FilledButton(
-                    onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    ),
-                    child: Text(isAr ? 'تسجيل الدخول' : 'Log in'),
-                  ),
-                )
-              else
+              if (widget.isGuest) ...[
+                IconButton(
+                  icon: const Icon(Icons.language_rounded),
+                  tooltip: isAr ? 'English' : 'العربية',
+                  onPressed: AppLanguage.toggleLanguage,
+                ),
+                if (!isAr) _buildGuestLoginButton(context, isAr),
+              ] else if (!widget.isGuest) ...[
                 StreamBuilder<int>(
                   stream: FarmNotificationService.getUnreadCountStream(
                     _farmCode,
@@ -125,7 +127,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                     );
                   },
                 ),
-              if (!widget.isGuest) const SizedBox(width: 8),
+                if (!isAr) _buildAvatarButton(profile, isAr),
+                const SizedBox(width: 8),
+              ],
             ],
           ),
           body: widget.isGuest || _farmCode.isEmpty
@@ -173,51 +177,66 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     );
   }
 
+  Widget _buildAvatarButton(Map<String, dynamic>? profile, bool isAr) {
+    return Builder(
+      builder: (context) {
+        final photoUrl = profile?['photo_url']?.toString();
+        final name = FarmSessionService.currentUserName.trim();
+        return IconButton(
+          tooltip: isAr ? 'الحساب والقائمة' : 'Account and menu',
+          onPressed: () => Scaffold.of(context).openDrawer(),
+          icon: CircleAvatar(
+            radius: 17,
+            backgroundColor: TerraTheme.sage.withValues(alpha: .4),
+            backgroundImage: photoUrl != null && photoUrl.isNotEmpty
+                ? NetworkImage(photoUrl)
+                : null,
+            child: photoUrl == null || photoUrl.isEmpty
+                ? Text(
+                    name.isEmpty ? 'T' : name[0].toUpperCase(),
+                    style: const TextStyle(
+                      color: TerraTheme.forest,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  )
+                : null,
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildGuestLoginButton(BuildContext context, bool isAr) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(start: 4, end: 4),
+      child: FilledButton.icon(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const LoginScreen()),
+        ),
+        icon: const Icon(Icons.login_rounded, size: 16),
+        label: Text(isAr ? 'تسجيل الدخول' : 'Log in'),
+        style: FilledButton.styleFrom(
+          backgroundColor: TerraTheme.forest,
+          foregroundColor: Colors.white,
+          minimumSize: const Size(0, 38),
+          padding: const EdgeInsets.symmetric(horizontal: 10),
+          textStyle: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildGuestHome(bool isAr) {
     return ListView(
       padding: const EdgeInsets.fromLTRB(14, 18, 14, 28),
       children: [
         _buildOverviewCards(isAr),
         const SizedBox(height: 18),
-        Card(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: Colors.grey.shade200),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildSectionTitle(
-                  isAr ? 'الطقس والمناخ' : 'Weather & climate',
-                  Icons.wb_sunny_outlined,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  isAr
-                      ? 'تابع حالة الطقس والمناخ لاتخاذ قرارات أفضل لمزرعتك.'
-                      : 'Follow weather and climate conditions for better farm decisions.',
-                  style: TextStyle(color: Colors.grey.shade700, height: 1.4),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => WeatherClimateHomeScreen(isArabic: isAr),
-                    ),
-                  ),
-                  icon: const Icon(Icons.wb_sunny_rounded),
-                  label: Text(
-                    isAr ? 'عرض الطقس والمناخ' : 'View weather & climate',
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
+        _buildHeroBanner(isAr),
         const SizedBox(height: 18),
         SizedBox(
           height: 50,
@@ -228,9 +247,178 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             ),
             icon: const Icon(Icons.add_business_rounded),
             label: Text(isAr ? 'إنشاء مزرعة' : 'Create a farm'),
+            style: FilledButton.styleFrom(
+              backgroundColor: TerraTheme.forest,
+              foregroundColor: Colors.white,
+              minimumSize: const Size.fromHeight(50),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(15),
+              ),
+            ),
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildHeroBanner(bool isAr) {
+    return Material(
+      color: TerraTheme.paper,
+      elevation: 1,
+      shadowColor: TerraTheme.ink.withValues(alpha: .08),
+      borderRadius: BorderRadius.circular(24),
+      child: InkWell(
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) =>
+                PlantDoctorScreen(isArabic: isAr, openDiagnosisOnStart: true),
+          ),
+        ),
+        borderRadius: BorderRadius.circular(24),
+        child: Ink(
+          height: 194,
+          decoration: BoxDecoration(
+            color: TerraTheme.paper,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: TerraTheme.line),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
+                const PositionedDirectional(
+                  end: -30,
+                  top: -35,
+                  child: SizedBox(
+                    width: 170,
+                    height: 170,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Color(0xFFE8F2E9),
+                      ),
+                    ),
+                  ),
+                ),
+                PositionedDirectional(
+                  end: 32,
+                  bottom: 20,
+                  child: Icon(
+                    Icons.eco_rounded,
+                    size: 92,
+                    color: TerraTheme.forest.withValues(alpha: .08),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 18, 18, 18),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              isAr
+                                  ? 'TerraLogic: مستقبلك الزراعي بين يديك'
+                                  : 'TerraLogic: Your agricultural future',
+                              style: const TextStyle(
+                                color: TerraTheme.ink,
+                                fontSize: 18,
+                                height: 1.2,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: 9),
+                            Text(
+                              isAr
+                                  ? 'أداتك الشاملة لتشخيص النباتات، إدارة المحاصيل، ومراقبة مواردك البشرية بذكاء.'
+                                  : 'Your complete tool for plant diagnosis, crop management, and smart workforce monitoring.',
+                              style: TextStyle(
+                                color: Colors.blueGrey.shade700,
+                                fontSize: 12,
+                                height: 1.45,
+                              ),
+                            ),
+                            const SizedBox(height: 14),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 11,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: TerraTheme.forest,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                isAr ? 'ابدأ التشخيص الآن' : 'Start diagnosis',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const SizedBox(
+                        width: 76,
+                        height: 96,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: <Widget>[
+                            Icon(
+                              Icons.psychology_rounded,
+                              color: TerraTheme.forest,
+                              size: 72,
+                            ),
+                            Positioned(
+                              bottom: 4,
+                              child: SizedBox(
+                                width: 34,
+                                height: 34,
+                                child: DecoratedBox(
+                                  decoration: BoxDecoration(
+                                    color: TerraTheme.paper,
+                                    shape: BoxShape.circle,
+                                    border: Border.fromBorderSide(
+                                      BorderSide(
+                                        color: TerraTheme.sage,
+                                        width: 2,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Icon(
+                                    Icons.eco_rounded,
+                                    color: TerraTheme.forest,
+                                    size: 21,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Positioned(
+                              top: 4,
+                              right: 3,
+                              child: Icon(
+                                Icons.auto_awesome_rounded,
+                                color: TerraTheme.olive,
+                                size: 19,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -268,7 +456,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
               backgroundColor: Color(0xFFE8F5E9),
               child: Icon(
                 Icons.camera_alt_rounded,
-                color: Color(0xFF2E7D32),
+                color: TerraTheme.forest,
                 size: 27,
               ),
             ),
@@ -309,7 +497,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                       : 'Take a photo and diagnose',
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF2E7D32),
+                  backgroundColor: TerraTheme.forest,
                   foregroundColor: Colors.white,
                   elevation: 0,
                   minimumSize: const Size.fromHeight(40),
@@ -413,15 +601,16 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
     final date = _taskDate(doc);
 
     return Card(
-      margin: const EdgeInsets.only(bottom: 10),
-      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 1,
+      shadowColor: Colors.black.withValues(alpha: .06),
       color: TerraTheme.paper,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(18),
-        side: const BorderSide(color: TerraTheme.line),
+        borderRadius: BorderRadius.circular(20),
+        side: BorderSide(color: TerraTheme.line.withValues(alpha: .8)),
       ),
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -456,7 +645,7 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
                         _formatDate(date, isAr),
                         style: TextStyle(
                           color: Colors.grey.shade600,
-                          fontSize: 10,
+                          fontSize: 11,
                         ),
                       ),
                     ],
@@ -489,63 +678,79 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
             const SizedBox(height: 11),
             Text(
               data['text']?.toString() ?? '',
-              style: const TextStyle(fontSize: 14, height: 1.45),
+              style: const TextStyle(
+                fontSize: 14,
+                height: 1.55,
+                color: TerraTheme.ink,
+              ),
             ),
-            const Divider(height: 20),
+            const Divider(height: 24),
             Row(
               children: [
-                InkWell(
-                  onTap: () => _toggleLike(doc.id, liked),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 3,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          liked ? Icons.favorite : Icons.favorite_border,
-                          size: 19,
-                          color: liked ? Colors.redAccent : Colors.grey,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          '${likes.length}',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 12,
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _toggleLike(doc.id, liked),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      decoration: BoxDecoration(
+                        color: liked
+                            ? Colors.redAccent.withValues(alpha: .08)
+                            : TerraTheme.mist,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            liked ? Icons.favorite : Icons.favorite_border,
+                            size: 18,
+                            color: liked ? Colors.redAccent : Colors.grey,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 5),
+                          Text(
+                            '${likes.length}',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-                const SizedBox(width: 18),
-                InkWell(
-                  onTap: () => _showComments(doc, isAr),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 5,
-                      vertical: 3,
-                    ),
-                    child: Row(
-                      children: [
-                        const Icon(
-                          Icons.mode_comment_outlined,
-                          size: 18,
-                          color: TerraTheme.blue,
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          isAr ? 'تعليقات' : 'Comments',
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 12,
+                const SizedBox(width: 10),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _showComments(doc, isAr),
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(vertical: 7),
+                      decoration: BoxDecoration(
+                        color: TerraTheme.mist,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(
+                            Icons.mode_comment_outlined,
+                            size: 18,
+                            color: TerraTheme.blue,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 5),
+                          Text(
+                            isAr ? 'تعليقات' : 'Comments',
+                            style: TextStyle(
+                              color: Colors.grey.shade700,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

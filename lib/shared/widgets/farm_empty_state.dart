@@ -5,8 +5,13 @@ import 'package:terralogic/signup_screen.dart';
 
 class FarmEmptyState extends StatelessWidget {
   final bool isArabic;
+  final bool showLoginButton;
 
-  const FarmEmptyState({super.key, this.isArabic = true});
+  const FarmEmptyState({
+    super.key,
+    this.isArabic = true,
+    this.showLoginButton = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +119,28 @@ class FarmEmptyState extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (showLoginButton) ...[
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                      ),
+                      icon: const Icon(Icons.login_rounded),
+                      label: Text(isAr ? 'تسجيل الدخول' : 'Log in'),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: TerraTheme.forest,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size.fromHeight(50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
